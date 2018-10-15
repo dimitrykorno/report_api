@@ -149,9 +149,7 @@ class Report(Singleton):
         user_id1 = cls.event_data[OS.get_aid(cls.os)]
         user_id2 = cls.event_data[OS.get_id(cls.os)]
         # проверка на тестеров
-        if {user_id1, user_id2} & cls.user_skip_list:
-            # print("skip test", new_user.user_id, new_user.installed_app_version)
-            # cls.testers.add(new_user.user_id)
+        if {user_id1 , user_id2} & cls.user_skip_list:
             return None
 
         # если пользователь отличается от предыдущего
@@ -159,38 +157,8 @@ class Report(Singleton):
 
             new_user = cls.User(id_1=user_id1, id_2=user_id2)
 
-            '''
-            # БЛОК ПРОВЕРОК ПОЛЬЗОВАТЕЛЯ
-            # проверка версии приложения
-            if cls.min_app_version not in (None, "0", "0.0.0") and (
-                            (not cls.exact and new_user.installed_app_version < cls.min_app_version) or (
-                                    cls.exact and new_user.installed_app_version != cls.min_app_version) or (
-                                    user_id1 in cls.user_ifa_skip_list or
-                                    user_id2 in cls.user_ifv_skip_list)):
-                print("skip vers", new_user.user_id, new_user.installed_app_version)
-                cls.user_ifa_skip_list.add(user_id1)
-                cls.user_ifv_skip_list.add(user_id2)
-                return None
-            '''
-
-            '''
-                # проверка на установку
-            elif cls.installs and not cls._in_installs(user_id1, user_id2):
-                print("skip inst", new_user.user_id)
-                cls.user_ifa_skip_list.add(user_id1)
-                cls.user_ifv_skip_list.add(user_id2)
-                new_user.skipped = True
-                return None
-            '''
-            '''
-                # проверка по странам
-            elif cls.countries and new_user.country not in cls.countries:
-                print("skip countries", cls.countries, new_user.country)
-                return None
-            '''
             # если он прошел проверки на версию установленного приложения и на тестера, то становится
             # новым текущим пользователем
-
             if MySQLHandler.installs_list:
                 new_user.install_date, \
                 new_user.publisher, \
@@ -218,7 +186,9 @@ class Report(Singleton):
                 return None
 
             # Обновляем заходы пользователя
-            if not cls.current_user.first_session and cls.current_user.is_new_session(cls.previous_event,cls.current_event) and cls.event_data["event_datetime"].date() not in cls.current_user.entries:
+            if not cls.current_user.first_session and cls.current_user.is_new_session(cls.previous_event,
+                                                                                      cls.current_event) and \
+                            cls.event_data["event_datetime"].date() not in cls.current_user.entries:
                 cls.current_user.entries.append(cls.event_data["event_datetime"].date())
             if "event_datetime" in cls.event_data.keys():
                 cls.current_user.last_enter = cls.event_data["event_datetime"]
@@ -244,6 +214,7 @@ class Report(Singleton):
         cls.app = app
         cls.os = OS.get_os(os)
         cls.user_status_check = user_status_check
+        cls.user_skip_list = test_devices_android if os.lower() == "android" else test_devices_ios
 
     @classmethod
     def set_installs_data(cls, additional_parameters=[],
@@ -300,7 +271,7 @@ class Report(Singleton):
         :return: новый ли пользователь
         '''
         if cls.current_user and (next_id1 or next_id2):
-            return  cls.current_user.user_id not in (next_id1, next_id2)
+            return cls.current_user.user_id not in (next_id1, next_id2)
         elif cls.current_user and cls.previous_user:
             if cls.current_user.user_id == "" and cls.previous_user.user_id == "":
                 if cls.previous_user.country != cls.current_user.country:
@@ -354,44 +325,6 @@ class Report(Singleton):
                        install["app_version_name"], \
                        install["country_iso_code"]
         return None, None, None, None, None
-
-    '''
-    @staticmethod
-    def _insert_installs_in_sql(sql):
-        """
-        Функция для добавления в SQL запрос строк с проверкой на вхождение в списки установок
-        (сохраняет txt файл в корне проекта с последним исполненным запросом для проверки руками)
-        :param sql: оригинальный SQL запрос
-        :return: SQL запрос с вставленными строками
-        """
-        user_id1_list = []
-        user_id2_list = []
-        for install in Report.installs:
-            user_id1_list.append(install[OS.get_aid(Report.os)])
-            user_id2_list.append(install[OS.get_id(Report.os)])
-        lines = sql.splitlines()
-        last_line_index = -2
-        first_lines = lines
-        for index, line in enumerate(lines):
-            if "order by" in line:
-                first_lines = lines[:-(len(lines) - index)]
-                last_line_index = index
-
-        new_sql = '\n'.join(first_lines)
-        new_sql += """
-        and
-        (
-        {0} in ("{1}") 
-        and
-        {2} in ("{3}")
-        )
-""".format(OS.get_aid(Report.os), '","'.join(map(str, user_id1_list)), OS.get_id(Report.os),
-           '","'.join(map(str, user_id2_list)))
-        new_sql += lines[last_line_index]
-        file = open("sql.txt", "w")
-        file.write(new_sql)
-        return new_sql
-    '''
 
     @classmethod
     def get_timediff(cls, datetime_1=None, datetime_2=None, measure="min"):
@@ -453,6 +386,19 @@ class Report(Singleton):
     @staticmethod
     def draw_plot(x, y_dict, xtick_steps=1, xticks_move=0, x_ticks_labels=list(),
                   title=None, folder="", show=False, format="png"):
+        """
+        Вызов функции рисовки графика по списку входных данных y
+        :param x:
+        :param y_dict: Словарь со значениями y для разных графиков в одной плоскости
+        :param xtick_steps:
+        :param xticks_move:
+        :param x_ticks_labels:
+        :param title:
+        :param folder:
+        :param show:
+        :param format:
+        :return:
+        """
         draw_plot(x, y_dict,
                   xtick_steps=xtick_steps, xticks_move=xticks_move, x_ticks_labels=x_ticks_labels,
                   title=title, folder=folder, show=show, format=format)

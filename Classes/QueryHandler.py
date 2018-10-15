@@ -4,6 +4,9 @@ from report_api.OS import OS
 
 
 class QueryHandler():
+    """
+    Обработчик, составляющий запросы к базе
+    """
     def __init__(self, database="events",
                  os=OS.ios,
                  app="sop",
@@ -47,6 +50,12 @@ class QueryHandler():
         self.add_order_parameters()
 
     def add_select_parameters(self, parameters=[]):
+        """
+        Добавление дополнительных параметров (столбцов) в запрос
+        :param parameters: параметры
+        :return:
+        """
+        #разные обязательные сталбцы для установок и событий
         if self.database is "installs":
             mandatory_parameters = {self.user_id1,
                                     self.user_id2,
@@ -71,6 +80,13 @@ class QueryHandler():
         self.select_row = "select " + ",".join(parameters)
 
     def add_from_database(self, os=OS.ios, app="sop", database="events"):
+        """
+        Добавление строки, из какой базы получать данные
+        :param os: ос
+        :param app: приложение
+        :param database: база данных (событий или установки)
+        :return:
+        """
         self.from_row = """
         from {}_events.{}_{}
         """.format(app, database, OS.get_os_string(os))
@@ -82,6 +98,16 @@ class QueryHandler():
                              max_app_version=None,
                              countries_list=[],
                              events_list=[]):
+        """
+        Добавление параметров выборки
+        :param period_start: начало периода
+        :param period_end: конец периода
+        :param min_app_version: мин версия приложения
+        :param max_app_version: макс версия приложения
+        :param countries_list: список стран
+        :param events_list: список событий [event_name: event_json] (возможны списки и множества событий и Json)
+        :return:
+        """
 
         if period_start and isinstance(period_start, str):
             try:
@@ -134,6 +160,8 @@ class QueryHandler():
             country_iso_code in ({})
             """.format(','.join(countries_list))
 
+        # добавление списка событий event_name  и json
+        # в списке все параметры идут через and, в множестве через in
         events = ""
         for event in events_list:
             if events == "":
@@ -144,6 +172,7 @@ class QueryHandler():
 
             events += "("
             event_names_list = []
+            #приводим к виду списка, чтобы итерироваться (даже если 1)
             if not isinstance(event[0], list):
                 event_names_list.append(event[0])
             else:
@@ -168,6 +197,7 @@ class QueryHandler():
             if len(event) > 1:
                 events += "and ("
                 json_list = []
+                # приводим к виду списка, чтобы итерироваться (даже если 1)
                 if not isinstance(event[1], list):
                     json_list.append(event[1])
                 else:
@@ -202,6 +232,11 @@ class QueryHandler():
                 # print(self.where_row)
 
     def add_users_list(self, users_list):
+        """
+        Добавление списка установок
+        :param users_list:
+        :return:
+        """
         if users_list:
             user_id1_list = [install[self.user_id1] for install in users_list]
             user_id2_list = [install[self.user_id2] for install in users_list]
@@ -213,8 +248,11 @@ class QueryHandler():
             and
            {2} in ("{3}")
         )
-        """.format(self.user_id1, '","'.join(map(str, user_id1_list)), self.user_id2,
-                   '","'.join(map(str, user_id2_list)))
+        """.format(self.user_id1,
+                   '","'.join(map(str, user_id1_list)),
+                   self.user_id2,
+                   '","'.join(map(str, user_id2_list))
+                   )
 
     def add_order_parameters(self):
         datetime_name = "install_datetime " if "install" in self.database else "event_datetime"

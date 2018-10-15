@@ -10,7 +10,6 @@ from operator import mul, add, sub, pow
 import datetime
 
 
-
 def time_count(fn):
     """
     Декоратор для подсчета времени выполнения функции
@@ -30,6 +29,12 @@ def time_count(fn):
 
 
 def time_medium(fn):
+    """
+    Декоратор для подсчета среднего времени выполнения часто исполняемой функции (например парсинга)
+    :param fn:
+    :return:
+    """
+
     @wraps(fn)
     def wrapped(*args, **kwargs):
         start_time = time.time()
@@ -171,7 +176,7 @@ test_devices_ios = {
     "00AB8828-4167-44C6-AEAC-A46558ECEBB1", "E9073059-D0A1-44F8-B206-72AE0D366381",
     "A322DE92-758A-4503-93D6-C2C58CF1B6A7", "7B633152-0E9F-478F-93DB-F5301D9BE271",
     "6AA563C5-65E0-416C-AC48-EBD79AB20D69", "A322DE92-758A-4503-93D6-C2C58CF1B6A7",
-    "722870FC-3EC0-4690-8B22-C6ACC1BA6304", "25EAF46B-09D2-4BF0-8F92-3F7CC1E2435D"
+    "722870FC-3EC0-4690-8B22-C6ACC1BA6304", "25EAF46B-09D2-4BF0-8F92-3F7CC1E2435D",
                                             "47ADA9C1-DADD-4115-A332-52F3291FBD76",
     "2AB947E4-B36A-44DA-9666-8456D11DF47B",
     "07632979-F475-43D2-B006-7D17DCDEBCCF",
@@ -196,14 +201,24 @@ test_devices_ios = {
 
 # подозрения:
 # iphone 7+ 38473BC6-0D1B-4CDA-BB2C-DB757D09F9C7
+
+
 def daterange(start_date, end_date):
+    """
+    Генератор дат от начальной до конечной даты по каждомы дню
+    :param start_date:
+    :param end_date:
+    :return:
+    """
     if not end_date:
-        end_date=datetime.datetime.now().date()
+        end_date = datetime.datetime.now().date()
     for n in range(int((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
 
+
 def week_of_month(dt):
-    """ Returns the week of the month for the specified date.
+    """
+    Returns the week of the month for the specified date.
     """
 
     first_day = dt.replace(day=1)
@@ -214,11 +229,11 @@ def week_of_month(dt):
 
 
 def draw_plot(x, y_dict, xtick_steps=1, xticks_move=0, x_ticks_labels=list(), title=None, folder="", show=False,
-               format="png"):
+              format="png"):
     """
     рисование графика, расситано на одновременное рисование множества графиков из словаря
     :param x: иксы
-    :param y_dict: словарь и y
+    :param y_dict: словарь y-ков
     :param xtick_steps: шаги иксов
     :param xticks_move: смещение иксов
     :param x_ticks_labels: лейблы иксов
