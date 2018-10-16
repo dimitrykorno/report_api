@@ -8,7 +8,7 @@ import numpy as np
 from math import log
 from operator import mul, add, sub, pow
 import datetime
-
+#from Classes.Events import Event
 
 def time_count(fn):
     """
@@ -39,7 +39,7 @@ def time_medium(fn):
     def wrapped(*args, **kwargs):
         start_time = time.time()
         result = fn(*args, **kwargs)
-        # Report.Event_class.medium_time.append((time.time() - start_time))
+        #Event.medium_time.append((time.time() - start_time))
 
         return result
 
@@ -188,7 +188,10 @@ test_devices_ios = {
 
     "B4AB781D-654D-4AEB-AAE9-2F4ABF1BC92B",
     "DCE5132A-7691-4C96-ABD3-5E5A3308898B",
-
+    #омск,ipad mini4 куча покупок
+    "4B63E67D-BB82-4097-AE0A-D0136EBF8292",
+    #москва se куча покупок
+    "AD249847-3E4A-41FA-A764-2CF7BFAC1D8C",
     # временно, пока не решу, что делать с людьми, меняющими девайсы и ifa
     "1E629546-A1E1-4B25-88DE-0AA4060F8509",
     "44D40C4B-77C4-4CB0-8B9C-CE846D2C7BE1",
