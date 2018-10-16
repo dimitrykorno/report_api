@@ -100,20 +100,16 @@ class Report(Singleton):
             # если с ним нет проблем (прошел все проверки)
             if got_user:
                 # получаем следующее время события и версию приложения
-                if "app_version_name" in cls.event_data.keys():
-                    cls.current_app_version = cls.event_data["app_version_name"]
+                cls.current_app_version = cls.event_data["app_version_name"]
 
                 # заменяем предыдущее событие текущим
                 if cls.current_event:
                     cls.previous_event = cls.current_event
-                # парсим событие
-                if "event_json" in cls.event_data.keys():
-                    json = cls.event_data["event_json"]
-                else:
-                    json = None
 
+                # парсим событие
                 event = cls.Parser.parse_event(event_name=cls.event_data["event_name"],
-                                               event_json=json, datetime=cls.event_data["event_datetime"])
+                                               event_json=cls.event_data["event_json"],
+                                               datetime=cls.event_data["event_datetime"])
                 cls.current_event = event
 
                 # если нужно, обновляем статус игрока
@@ -149,7 +145,7 @@ class Report(Singleton):
         user_id1 = cls.event_data[OS.get_aid(cls.os)]
         user_id2 = cls.event_data[OS.get_id(cls.os)]
         # проверка на тестеров
-        if {user_id1 , user_id2} & cls.user_skip_list:
+        if {user_id1, user_id2} & cls.user_skip_list:
             return None
 
         # если пользователь отличается от предыдущего
@@ -167,12 +163,16 @@ class Report(Singleton):
                 new_user.country = cls._get_install_data(user_id1, user_id2)
             else:
                 new_user.install_date = cls.event_data["event_datetime"].date()
-                new_user.publisher = None
-                new_user.source = None
+                new_user.publisher = "unknown"
+                new_user.source = "unknown"
                 new_user.installed_app_version = cls.event_data[
-                    "app_version_name"] if "app_version_name" in cls.event_data.keys() else None
+                    "app_version_name"] if "app_version_name" in cls.event_data.keys() else "unknown"
                 new_user.country = cls.event_data[
-                    "country_iso_code"] if "country_iso_code" in cls.event_data.keys() else None
+                    "country_iso_code"] if "country_iso_code" in cls.event_data.keys() else "unknown"
+                if new_user.country == "":
+                    new_user.country="unknown"
+
+
 
             new_user.first_session = True
             new_user.entries.append(new_user.install_date)
@@ -319,12 +319,13 @@ class Report(Singleton):
                 publisher_name = install["publisher_name"] if install["publisher_name"] != "" else "Organic"
                 tracker_name = install["tracker_name"] if install["tracker_name"] not in (
                     "", "unknown") else OS.get_source(cls.os)
+                country = install["country_iso_code"] if install["country_iso_code"] else "unknown"
                 return install["install_datetime"].date(), \
                        publisher_name, \
                        tracker_name, \
                        install["app_version_name"], \
-                       install["country_iso_code"]
-        return None, None, None, None, None
+                       country
+        return None, None, None, None, "unknown"
 
     @classmethod
     def get_timediff(cls, datetime_1=None, datetime_2=None, measure="min"):
