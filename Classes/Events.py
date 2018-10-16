@@ -1,4 +1,5 @@
 class Event:
+    __slots__ = 'datetime'
     medium_time = []
 
     def __init__(self, datetime):
@@ -16,6 +17,8 @@ class Event:
 
 
 class PurchaseEvent(Event):
+    __slots__ = 'purchase', 'status', 'price'
+
     def __init__(self, purchase, status, price, datetime):
         super().__init__(datetime)
         self.purchase = purchase
