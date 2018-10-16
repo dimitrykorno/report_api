@@ -1,12 +1,10 @@
 from Classes.Events import *
 from report_api.Report import Report
-from report_api.Utilities.Utils import time_count, daterange, draw_plot, week_of_month
 from datetime import datetime
 import pandas as pd
 from dateutil import rrule
 
 
-@time_count
 def new_report(shop=None,
                parser=None,
                user_class=None,
@@ -30,14 +28,14 @@ def new_report(shop=None,
 
         Report.set_app_data(parser=parser, event_class=Event, user_class=user_class, os=os_str, app=app,
                             user_status_check=False)
-        Report.set_installs_data(additional_parameters=None,
-                                 period_start=period_start,
-                                 period_end=period_end,
-                                 min_version=min_version,
-                                 max_version=max_version,
-                                 countries_list=countries_list)
+        # Report.set_installs_data(additional_parameters=None,
+        #                          period_start=period_start,
+        #                          period_end=period_end,
+        #                          min_version=min_version,
+        #                          max_version=max_version,
+        #                          countries_list=countries_list)
 
-        Report.set_events_data(additional_parameters=None,
+        Report.set_events_data(additional_parameters=["country_iso_code"],
                                period_start=period_start,
                                period_end=period_end,
                                min_version=min_version,
@@ -97,8 +95,8 @@ def new_report(shop=None,
         # Y_past_money = [0] * len(X_days_sales)
 
         # формируем таблицу отчета
-        parameters = ["Category 1", "Category 2","Category 3", "First purchase", "Price", "Revenue", "Sales"]
-        short_parameters = ["Category 1", "Category 2","Category 3" "First purchase", "Price"]
+        parameters = ["Category 1", "Category 2", "Category 3", "First purchase", "Price", "Revenue", "Sales"]
+        short_parameters = ["Category 1", "Category 2", "Category 3" "First purchase", "Price"]
         countries = {}
 
         months_list = set()
@@ -161,7 +159,7 @@ def new_report(shop=None,
             #         str(purchase_date.day) + "." + str(purchase_date.month))] += Report.current_event.price
 
         months_list = sorted(months_list)
-        writer = pd.ExcelWriter(folder_dest+"/Sales" + os_str + ".xlsx")
+        writer = pd.ExcelWriter(folder_dest + "/Sales" + os_str + ".xlsx")
         for country in countries.keys():
             df = pd.DataFrame(index=unique_inapps, columns=parameters + months_list)
             for in_app in unique_inapps:
