@@ -3,7 +3,7 @@ from report_api.Report import Report
 from datetime import datetime
 import pandas as pd
 from dateutil import rrule
-
+from report_api.Utilities.Utils import get_medium_time,get_medium_time_2
 
 def new_report(shop=None,
                parser=None,
@@ -157,7 +157,7 @@ def new_report(shop=None,
             #     Y_past_sales[X_days_sales.index(str(purchase_date.day) + "." + str(purchase_date.month))] += 1
             #     Y_past_money[X_days_sales.index(
             #         str(purchase_date.day) + "." + str(purchase_date.month))] += Report.current_event.price
-
+        print("medium {0:.10f} {0:.10f}".format(get_medium_time(),get_medium_time_2()))
         months_list = sorted(months_list)
         writer = pd.ExcelWriter(folder_dest + "/Sales" + os_str + ".xlsx")
         for country in countries.keys():

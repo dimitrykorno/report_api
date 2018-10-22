@@ -1,6 +1,6 @@
 from _mysql_exceptions import OperationalError
 from report_api.Data.Data import get_data
-from report_api.Utilities.Utils import time_count
+from report_api.Utilities.Utils import time_count, time_medium_2
 
 
 class MySQLHandler():
@@ -21,6 +21,7 @@ class MySQLHandler():
     installs_handler = None
 
     # получение результата построчно или загрузка всего в оперативную память
+    app = None
     by_row = True
     result = None
     db = None
@@ -44,6 +45,7 @@ class MySQLHandler():
         Обнуление данных
         :return:
         """
+
         cls.users_chunk = 0
         cls.current_chunk = 0
         cls.installs_list = []
@@ -55,17 +57,20 @@ class MySQLHandler():
         cls.completed_connection = False
 
     @classmethod
-    # @time_count
     def fetch_next_event(cls):
         while True:
 
             if cls.by_row and cls.result:
                 # если нужно построчное подключение
-                event_data = cls.result.fetch_row(maxrows=1, how=1)
+                # try:
+                #event_data = cls.result.fetch_row(maxrows=1, how=1)
+                event_data = cls.result.fetchone()
+
                 # берем 0й элемент, т.к. оно приходит в виду (event_data,)
                 if event_data:
                     # отправляем событие в отчёт
-                    return event_data[0]
+                    #return event_data[0]
+                    return event_data
                 elif cls.completed_connection:
                     # если все данные получены, закрываем подключение и останавливаем отчёт
                     cls.db.close()
@@ -75,6 +80,23 @@ class MySQLHandler():
                     # закрываем предыдущее подключение и уходим в цикл
                     cls.db.close()
                     cls.result = None
+                    # except OperationalError as er:
+                    #     print(er.args)
+                    #     # подключение не завершено
+                    #     cls.completed_connection = False
+                    #     cls.result=None
+                    #     cls.by_row=False
+                    #     # устанавливаем новые chunk установок
+                    #     if cls.installs_list:
+                    #         cls.users_chunk = int(cls.users_chunk * cls.multiplier) if cls.users_chunk != 0 else int(
+                    #             len(cls.installs_list) * cls.multiplier)
+                    #         cls.current_chunk = 0
+                    #         print("Ошибка запроса к базе. Слишком долгий запрос")
+                    #     else:
+                    #         print("Ошибка запроса к базе.")
+                    #         break
+                    #     cls.multiplier=cls.multiplier*0.8
+                    #     continue
 
             elif not cls.by_row and cls.result:
                 # если в массиве что-то есть, отправляем первое событие
@@ -91,6 +113,9 @@ class MySQLHandler():
         Добавление списка установок в запрос
         :return:
         """
+        # if cls.users_chunk == 0 and len(cls.installs_list) > 10000:
+        #     cls.users_chunk = 10000
+        #     cls.current_chunk = 0
         # если chunk нулевой, добавляем все установки сразу, если нет, то добавляем следующий chunk
         if cls.users_chunk != 0:
             cls.events_handler.add_users_list(
@@ -109,32 +134,33 @@ class MySQLHandler():
         Получение следующей порции событий из базы
         :return:
         """
-        #Пока слеюущая порция события не получена
+        # Пока слеюущая порция события не получена
         got_next_events = False
         while not got_next_events:
-            # вывод сообщения о следующем chunk
-            if cls.users_chunk != 0:
-                print("Выставлен размер chunk'а: ", str(cls.current_chunk * cls.users_chunk) + "-" +
-                      str(min((cls.current_chunk + 1) * cls.users_chunk, len(cls.installs_list))), " / ",
-                      len(cls.installs_list))
             # добавление установок, если он иесть
             if cls.installs_list:
                 cls._update_events_handler()
+            # вывод сообщения о следующем chunk
+            if cls.users_chunk != 0:
+                print("Выставлен размер chunk'а: ", str((cls.current_chunk-1) * cls.users_chunk) + "-" +
+                      str(min(cls.current_chunk  * cls.users_chunk, len(cls.installs_list))), " / ",
+                      len(cls.installs_list))
             try:
-                #подключение к базе и получение следующих данных
-                cls.result, cls.db = get_data(cls.events_handler.get_query(), by_row=cls.by_row,
+                # подключение к базе и получение следующих данных
+                cls.result, cls.db = get_data(cls.events_handler.get_query(), db=cls.app, by_row=cls.by_row,
                                               name="Запрос к базе событий.")
                 got_next_events = True
 
-                #если получаем chunk'ами и подключение завершено, то отключаем базу
+                # если получаем chunk'ами и подключение завершено, то отключаем базу
                 if not cls.by_row and cls.completed_connection:
                     cls.db.close()
 
-            #учитываем ошибку слишком длинного запроса
-            except OperationalError:
+            # учитываем ошибку слишком длинного запроса
+            except OperationalError as er:
+                print(er.args)
                 # подключение не завершено
                 cls.completed_connection = False
-                #устанавливаем новые chunk установок
+                # устанавливаем новые chunk установок
                 if cls.installs_list:
                     cls.users_chunk = int(cls.users_chunk * cls.multiplier) if cls.users_chunk != 0 else int(
                         len(cls.installs_list) * cls.multiplier)
@@ -143,6 +169,10 @@ class MySQLHandler():
                 else:
                     print("Ошибка запроса к базе.")
                     break
+                cls.multiplier = cls.multiplier * 0.8
+                continue
+            except Exception as er:
+                print(er.args)
                 continue
         if cls.users_chunk == 0:
             cls.completed_connection = True
@@ -158,6 +188,6 @@ class MySQLHandler():
         :return:
         """
         query = cls.installs_handler.get_query()
-        result, db = get_data(query, by_row=False, name="Запрос к базе установок.")
+        result, db = get_data(query, db=cls.app, by_row=False, name="Запрос к базе установок.")
         cls.installs_list = result
         db.close()

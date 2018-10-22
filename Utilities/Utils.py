@@ -8,7 +8,8 @@ import numpy as np
 from math import log
 from operator import mul, add, sub, pow
 import datetime
-#from Classes.Events import Event
+from report_api.Classes.Events import Event
+
 
 def time_count(fn):
     """
@@ -37,13 +38,61 @@ def time_medium(fn):
 
     @wraps(fn)
     def wrapped(*args, **kwargs):
-        start_time = time.time()
+        start_time = time.perf_counter()
         result = fn(*args, **kwargs)
-        #Event.medium_time.append((time.time() - start_time))
+        Event.medium_time.append(round(float(time.perf_counter() - start_time),8))
 
         return result
 
     return wrapped
+
+def time_medium_2(fn):
+    """
+    Декоратор для подсчета среднего времени выполнения часто исполняемой функции (например парсинга)
+    :param fn:
+    :return:
+    """
+
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = fn(*args, **kwargs)
+        Event.medium_time_2.append(round(float(time.perf_counter() - start_time),8))
+
+        return result
+
+    return wrapped
+
+def get_medium_time():
+    '''
+    Получение результата расчетов среднего времени выполнения функции
+    :return:
+    '''
+    for index,t in enumerate(Event.medium_time):
+        if index<100:
+            print('{0:.8f}'.format(t),end=", ")
+    print("")
+    first=0
+
+    if len(Event.medium_time) > 0:
+        first= sum(Event.medium_time) / len(Event.medium_time)
+    return first
+
+def get_medium_time_2():
+    '''
+    Получение результата расчетов среднего времени выполнения функции
+    :return:
+    '''
+    #print(Event.medium_time_2)
+    for index,t in enumerate(Event.medium_time_2):
+        if index<100:
+            print('{0:.8f}'.format(t),end=", ")
+    print("")
+    second=0
+
+    if len(Event.medium_time_2) > 0:
+        second= sum(Event.medium_time_2[1:]) / (len(Event.medium_time_2)-1)
+    return second
 
 
 def get_timediff(datetime_1=None, datetime_2=None, measure="min"):
@@ -177,7 +226,7 @@ test_devices_ios = {
     "A322DE92-758A-4503-93D6-C2C58CF1B6A7", "7B633152-0E9F-478F-93DB-F5301D9BE271",
     "6AA563C5-65E0-416C-AC48-EBD79AB20D69", "A322DE92-758A-4503-93D6-C2C58CF1B6A7",
     "722870FC-3EC0-4690-8B22-C6ACC1BA6304", "25EAF46B-09D2-4BF0-8F92-3F7CC1E2435D",
-                                            "47ADA9C1-DADD-4115-A332-52F3291FBD76",
+    "47ADA9C1-DADD-4115-A332-52F3291FBD76",
     "2AB947E4-B36A-44DA-9666-8456D11DF47B",
     "07632979-F475-43D2-B006-7D17DCDEBCCF",
     "E66C4F64-5CEE-40C6-9A04-FA512D3B6FF3",
@@ -188,9 +237,9 @@ test_devices_ios = {
 
     "B4AB781D-654D-4AEB-AAE9-2F4ABF1BC92B",
     "DCE5132A-7691-4C96-ABD3-5E5A3308898B",
-    #омск,ipad mini4 куча покупок
+    # омск,ipad mini4 куча покупок
     "4B63E67D-BB82-4097-AE0A-D0136EBF8292",
-    #москва se куча покупок
+    # москва se куча покупок
     "AD249847-3E4A-41FA-A764-2CF7BFAC1D8C",
     # временно, пока не решу, что делать с людьми, меняющими девайсы и ifa
     "1E629546-A1E1-4B25-88DE-0AA4060F8509",

@@ -29,6 +29,7 @@ class QueryHandler():
         self.user_id2 = ""
 
         self.database = database
+        self.app=app
         self.result = ""
 
         self.user_id1 = OS.get_aid(os)
@@ -241,18 +242,28 @@ class QueryHandler():
             user_id1_list = [install[self.user_id1] for install in users_list]
             user_id2_list = [install[self.user_id2] for install in users_list]
 
+        #     self.users_row = """
+        # and
+        # (
+        #    {0} in ("{1}")
+        #     and
+        #    {2} in ("{3}")
+        # )
+        # """.format(self.user_id1,
+        #            '","'.join(map(str, user_id1_list)),
+        #            self.user_id2,
+        #            '","'.join(map(str, user_id2_list))
+        #            )
             self.users_row = """
-        and
-        (
-           {0} in ("{1}")
-            and
-           {2} in ("{3}")
-        )
-        """.format(self.user_id1,
-                   '","'.join(map(str, user_id1_list)),
-                   self.user_id2,
-                   '","'.join(map(str, user_id2_list))
-                   )
+                    and
+                    (
+                       {0} in ("{1}")
+                    )
+                    """.format(
+                               self.user_id2,
+                               '","'.join(map(str, user_id2_list))
+                               )
+
 
     def add_order_parameters(self):
         datetime_name = "install_datetime " if "install" in self.database else "event_datetime"
@@ -264,6 +275,6 @@ class QueryHandler():
         # print("".join([self.result, self.users_row, self.order_row]))
 
         query = "".join([self.result, self.users_row, self.order_row])
-        file = open("sql " + self.user_id1 + ".txt", "w")
+        file = open("sql " + self.user_id1 +" "+self.database+ ".txt", "w")
         file.write(query)
         return query

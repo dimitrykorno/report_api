@@ -5,7 +5,7 @@ from report_api.Utilities.Utils import time_count
 
 
 @time_count
-def get_data(sql, by_row=True, name=""):
+def get_data(sql,db, by_row=True, name=""):
     """
     Подключение к базе и запрос к базе
     :param sql: SQL запрос
@@ -20,18 +20,27 @@ def get_data(sql, by_row=True, name=""):
     # в зависимости от метода получения данных подключаемся по-разному
     if by_row:
         try:
-            # стандартное подключение
-            db = MySQLdb.connect(host="localhost", user="root", passwd="0000", db="sop_events", charset='utf8')
-            # запрос
-            db.query(sql)
-            # получаем данные построчно
-            result = db.use_result()
+            # # стандартное подключение
+            # db = MySQLdb.connect(host="localhost", user="root", passwd="0000", db=db+"_events", charset='utf8')
+            # # запрос
+            # db.query(sql)
+            # # получаем данные построчно
+            # result = db.use_result()
+            db = MySQLdb.connect(host="localhost", user="root", passwd="0000", db=db + "_events", charset='utf8', cursorclass=MySQLdb.cursors.SSDictCursor)
+            db.ping(True)
+            c=db.cursor()
+            c.execute('SET GLOBAL connect_timeout=28800')
+            c.execute('SET GLOBAL wait_timeout=28800')
+            c.execute('SET GLOBAL interactive_timeout=28800')
+
+            c.execute(sql)
+            result = c
         except OperationalError:
             raise OperationalError
     else:
         try:
             # подключение через особый курсор, возвращающий список словарей с данными
-            db = MySQLdb.connect(host="localhost", user="root", passwd="0000", db="sop_events", charset='utf8',
+            db = MySQLdb.connect(host="localhost", user="root", passwd="0000", db=db+"_events", charset='utf8',
                                  cursorclass=MySQLdb.cursors.SSDictCursor)
             # создаем курсор для этого подключения
             c = db.cursor()

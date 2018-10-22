@@ -4,7 +4,7 @@ from weakref import WeakValueDictionary
 from report_api.OS import OS
 from report_api.Classes.MySqlHandler import MySQLHandler
 from report_api.Classes.QueryHandler import QueryHandler
-from report_api.Utilities.Utils import test_devices_android, test_devices_ios, get_timediff, draw_plot
+from report_api.Utilities.Utils import test_devices_android, test_devices_ios, get_timediff, draw_plot, time_medium
 
 
 # works in Python 2 & 3
@@ -77,6 +77,7 @@ class Report(Singleton):
         cls.user_status_check = False
 
     @classmethod
+    @time_medium
     def get_next_event(cls):
         '''
         Получение и обработка следующего события из базы.
@@ -165,17 +166,16 @@ class Report(Singleton):
                 new_user.install_date = cls.event_data["event_datetime"].date()
                 new_user.publisher = "unknown"
                 new_user.source = "unknown"
-                new_user.installed_app_version = cls.event_data[
-                    "app_version_name"] if "app_version_name" in cls.event_data.keys() else "unknown"
-                new_user.country = cls.event_data[
-                    "country_iso_code"] if "country_iso_code" in cls.event_data.keys() else "unknown"
+                # new_user.installed_app_version = cls.event_data[
+                #     "app_version_name"] if "app_version_name" in cls.event_data.keys() else "unknown"
+                # new_user.country = cls.event_data[
+                #     "country_iso_code"] if "country_iso_code" in cls.event_data.keys() else "unknown"
+                new_user.installed_app_version = cls.event_data["app_version_name"]
+                new_user.country = cls.event_data["country_iso_code"]
                 if new_user.country == "":
-                    new_user.country="unknown"
-
-
+                    new_user.country = "unknown"
 
             new_user.first_session = True
-            new_user.entries.append(new_user.install_date)
 
             cls.current_user = new_user
             cls.total_users += 1
@@ -186,12 +186,11 @@ class Report(Singleton):
                 return None
 
             # Обновляем заходы пользователя
-            if not cls.current_user.first_session and cls.current_user.is_new_session(cls.previous_event,
-                                                                                      cls.current_event) and \
-                            cls.event_data["event_datetime"].date() not in cls.current_user.entries:
+            # if not cls.current_user.first_session and cls.current_user.is_new_session(cls.previous_event,
+            #                                                                           cls.current_event) and \
+            if cls.event_data["event_datetime"].date() not in cls.current_user.entries:
                 cls.current_user.entries.append(cls.event_data["event_datetime"].date())
-            if "event_datetime" in cls.event_data.keys():
-                cls.current_user.last_enter = cls.event_data["event_datetime"]
+            cls.current_user.last_enter = cls.event_data["event_datetime"]
 
         # если текущий юзер первый, то вначале мы не смогли обновить предыдущего, поэтому делаем предыдущего им же
         if not cls.previous_user:
@@ -208,6 +207,7 @@ class Report(Singleton):
             return None
         cls.reset()
         MySQLHandler.reset()
+        MySQLHandler.app = app
         cls.Parser = parser
         cls.Event_class = event_class
         cls.User = user_class
@@ -261,6 +261,7 @@ class Report(Singleton):
                                                    countries_list=countries_list,
                                                    events_list=events_list
                                                    )
+        MySQLHandler.by_row = True
 
     @classmethod
     def is_new_user(cls, next_id1=None, next_id2=None):
