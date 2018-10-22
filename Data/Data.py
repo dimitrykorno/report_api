@@ -1,13 +1,13 @@
 ENV = "laptop"
 try:
     import MySQLdb
-    import MySQLdb.cursors as cursors
+    import MySQLdb.cursors
     from _mysql_exceptions import OperationalError
 except:
     import mysql.connector as MySQLdb
     import mysql.connector.cursor as cursors
     from mysql.connector import OperationalError
-    ENV = 'server'
+    ENV="server"
 
 from report_api.Utilities.Utils import time_count
 
@@ -26,10 +26,12 @@ def get_data(sql, db, by_row=True, name=""):
         print(name + " Построчно: " + str(by_row))
 
     try:
+        print("Connecting from laptop. ","Checked" if ENV=="laptop" else "Libraries error")
         db = MySQLdb.connect(host="localhost", user="root", passwd="0000", db=db + "_events", charset='utf8',
-                             cursorclass=cursors.SSDictCursor)
-        c = db.coursor()
+                             cursorclass=MySQLdb.cursors.SSDictCursor)
+        c = db.cursor()
     except:
+        print("Connecting from laptop. ", "Checked" if ENV == "server" else "Libraries error")
         db = MySQLdb.connect(host="localhost", user="root", passwd="hjkl098", db="analytics", charset='utf8')
         c = db.cursor(dictionary=True)
     # в зависимости от метода получения данных подключаемся по-разному

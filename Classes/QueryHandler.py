@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from report_api.OS import OS
-from report_api import Data
+from report_api.Data.Data import get_env
 
 
 class QueryHandler():
@@ -90,11 +90,11 @@ class QueryHandler():
         :param database: база данных (событий или установки)
         :return:
         """
-        if Data.get_env() == "laptop":
+        if get_env() == "laptop":
             self.from_row = """
             from {}_events.{}_{}
             """.format(app, database, OS.get_os_string(os))
-        elif Data.get_env() == "server":
+        elif get_env() == "server":
             if database == "events":
                 self.from_row = """
                 from events
