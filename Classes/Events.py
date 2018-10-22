@@ -22,7 +22,7 @@ class PurchaseEvent(Event):
 
     def __init__(self, purchase, status, price, datetime):
         super().__init__(datetime)
-        self.purchase = purchase
+        self.obj_name = purchase
         self.status = status
         self.price = price
 
@@ -30,5 +30,5 @@ class PurchaseEvent(Event):
 
     def to_string(self):
         info = super().to_string()
-        info += "Purchase: " + str(self.purchase) + ", Price: " + self.price + ", Status: " + str(self.status)
+        info += "Purchase: " + str(self.obj_name) + ", Price: " + self.price + ", Status: " + str(self.status)
         return info

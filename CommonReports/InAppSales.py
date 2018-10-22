@@ -121,7 +121,7 @@ def new_report(shop=None,
             country = Report.current_user.country
             if country not in countries.keys():
                 countries[country] = {}
-            in_app = Report.current_event.purchase
+            in_app = Report.current_event.obj_name
             unique_inapps.add(in_app)
             if in_app not in countries[country].keys():
                 countries[country][in_app] = dict.fromkeys(short_parameters, 0)
