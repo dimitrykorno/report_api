@@ -97,11 +97,11 @@ class QueryHandler():
         elif get_env() == "server":
             if database == "events":
                 self.from_row = """
-                from events
+                from analytics.events
                 """
             elif database == "installs":
                 self.from_row = """
-                from installations
+                from analytics.installations
                 """
 
     def add_where_parameters(self,
