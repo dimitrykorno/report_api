@@ -1,4 +1,9 @@
-from _mysql_exceptions import OperationalError
+try:
+    from MySQLdb import OperationalError
+except:
+    from mysql.connector import OperationalError
+
+#from _mysql_exceptions import OperationalError
 from report_api.Data.Data import get_data
 from report_api.Utilities.Utils import time_count, time_medium_2
 

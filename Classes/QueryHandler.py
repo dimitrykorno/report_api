@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
 
 from report_api.OS import OS
+from report_api import Data
 
 
 class QueryHandler():
     """
     Обработчик, составляющий запросы к базе
     """
+
     def __init__(self, database="events",
                  os=OS.ios,
                  app="sop",
@@ -29,12 +31,12 @@ class QueryHandler():
         self.user_id2 = ""
 
         self.database = database
-        self.app=app
+        self.app = app
         self.result = ""
 
         self.user_id1 = OS.get_aid(os)
         self.user_id2 = OS.get_id(os)
-        #if database == "installs" and (period_start, period_end, min_version, max_version) == (None, None, None, None):
+        # if database == "installs" and (period_start, period_end, min_version, max_version) == (None, None, None, None):
         #    return
         self.add_select_parameters(additional_parameters)
         self.add_from_database(os=os, app=app, database=database)
@@ -56,7 +58,7 @@ class QueryHandler():
         :param parameters: параметры
         :return:
         """
-        #разные обязательные сталбцы для установок и событий
+        # разные обязательные сталбцы для установок и событий
         if self.database is "installs":
             mandatory_parameters = {self.user_id1,
                                     self.user_id2,
@@ -88,9 +90,19 @@ class QueryHandler():
         :param database: база данных (событий или установки)
         :return:
         """
-        self.from_row = """
-        from {}_events.{}_{}
-        """.format(app, database, OS.get_os_string(os))
+        if Data.get_env() == "laptop":
+            self.from_row = """
+            from {}_events.{}_{}
+            """.format(app, database, OS.get_os_string(os))
+        elif Data.get_env() == "server":
+            if database == "events":
+                self.from_row = """
+                from events
+                """
+            elif database == "installs":
+                self.from_row = """
+                from installations
+                """
 
     def add_where_parameters(self,
                              period_start=None,
@@ -173,7 +185,7 @@ class QueryHandler():
 
             events += "("
             event_names_list = []
-            #приводим к виду списка, чтобы итерироваться (даже если 1)
+            # приводим к виду списка, чтобы итерироваться (даже если 1)
             if not isinstance(event[0], list):
                 event_names_list.append(event[0])
             else:
@@ -242,28 +254,27 @@ class QueryHandler():
             user_id1_list = [install[self.user_id1] for install in users_list]
             user_id2_list = [install[self.user_id2] for install in users_list]
 
-        #     self.users_row = """
-        # and
-        # (
-        #    {0} in ("{1}")
-        #     and
-        #    {2} in ("{3}")
-        # )
-        # """.format(self.user_id1,
-        #            '","'.join(map(str, user_id1_list)),
-        #            self.user_id2,
-        #            '","'.join(map(str, user_id2_list))
-        #            )
+            #     self.users_row = """
+            # and
+            # (
+            #    {0} in ("{1}")
+            #     and
+            #    {2} in ("{3}")
+            # )
+            # """.format(self.user_id1,
+            #            '","'.join(map(str, user_id1_list)),
+            #            self.user_id2,
+            #            '","'.join(map(str, user_id2_list))
+            #            )
             self.users_row = """
                     and
                     (
                        {0} in ("{1}")
                     )
                     """.format(
-                               self.user_id2,
-                               '","'.join(map(str, user_id2_list))
-                               )
-
+                self.user_id2,
+                '","'.join(map(str, user_id2_list))
+            )
 
     def add_order_parameters(self):
         datetime_name = "install_datetime " if "install" in self.database else "event_datetime"
@@ -275,6 +286,6 @@ class QueryHandler():
         # print("".join([self.result, self.users_row, self.order_row]))
 
         query = "".join([self.result, self.users_row, self.order_row])
-        file = open("sql " + self.user_id1 +" "+self.database+ ".txt", "w")
+        file = open("sql " + self.user_id1 + " " + self.database + ".txt", "w")
         file.write(query)
         return query

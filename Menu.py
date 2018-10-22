@@ -8,19 +8,21 @@ def menu(reports):
     :return:
     """
     while True:
-        for rep in reports.keys():
-            print(rep)
+
+
+        for rep_name in [rep[0] for rep in reports]:
+            print(rep_name)
         print("Отчёт: ", end="")
         chosen_report = "999999"
 
         # Выбор отчета с клавиатуры
-        while not chosen_report.isdigit() or int(chosen_report) > len(reports.keys()) or chosen_report == "0":
+        while not chosen_report.isdigit() or int(chosen_report) > len(reports) or chosen_report == "0":
             chosen_report = input()
-
+        chosen_report=int(chosen_report)
         # изменение стандартных значений исходных данных отчёта
-        settings = _get_settings(list(reports.values())[int(chosen_report) - 1])
+        settings = _get_settings(reports[chosen_report-1][1])
         # try:
-        list(reports.values())[int(chosen_report) - 1](*settings)
+        reports[chosen_report - 1][1](*settings)
         # except Exception as error:
         # print(error)
         # print(error.args)
