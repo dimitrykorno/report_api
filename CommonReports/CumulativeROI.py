@@ -357,8 +357,8 @@ def new_report(parser=None,
 
 
                     # Рисуем графики
-                    if not os.path.exists(folder_dest+publisher+"/"):
-                        os.makedirs(folder_dest+publisher+"/")
+                    if not os.path.exists(folder_dest+publisher+"/"+OS.get_os_string(os_obj)+"/"):
+                        os.makedirs(folder_dest+publisher+"/"+OS.get_os_string(os_obj)+"/")
                     Report.draw_plot(range(0, days_since_install + 1),
                                      { source + " ARPU": source_arpu_y},
                                      show=False,
