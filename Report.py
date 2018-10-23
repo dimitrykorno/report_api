@@ -205,6 +205,8 @@ class Report(Singleton):
                 new_user.source, \
                 new_user.installed_app_version, \
                 new_user.country = cls._get_install_data(user_id1, user_id2)
+                if not new_user.install_date:
+                    return None
             else:
                 new_user.install_date = cls.event_data["event_datetime"].date()
                 new_user.publisher = "unknown"
@@ -366,22 +368,28 @@ class Report(Singleton):
         :param user_id2: device_id
         :return: (дата установки, паблишер, трекер)
         """
-        id = user_id1 if user_id1 else user_id2
-        if id in MySQLHandler.installs_dict:
-            publisher_name = MySQLHandler.installs_dict[id]["publisher_name"] if MySQLHandler.installs_dict[id][
-                                                                                     "publisher_name"] != "" else "Organic"
-            tracker_name = MySQLHandler.installs_dict[id]["tracker_name"] if MySQLHandler.installs_dict[id][
-                                                                                 "tracker_name"] not in (
-                                                                                 "", "unknown") else OS.get_source(
-                cls.os)
-            country = MySQLHandler.installs_dict[id]["country_iso_code"] if MySQLHandler.installs_dict[id][
-                "country_iso_code"] else "unknown"
-            return MySQLHandler.installs_dict[id]["install_datetime"].date(), \
-                   publisher_name, \
-                   tracker_name, \
-                   MySQLHandler.installs_dict[id]["app_version_name"], \
-                   country
-        return None, None, None, None, "unknown"
+        if user_id1 in MySQLHandler.installs_dict_aid:
+            install=MySQLHandler.installs_dict_aid[user_id1]
+        elif user_id2 in MySQLHandler.installs_dict_aid:
+            install=MySQLHandler.installs_dict_id[user_id2]
+        else:
+            print(user_id1, "/", user_id2, "install not found")
+            if user_id1:
+                cls.user_skip_list.add(user_id1)
+            if user_id2:
+                cls.user_skip_list.add(user_id2)
+            return None, None, None, None, "unknown"
+
+        publisher_name = install["publisher_name"] if install["publisher_name"] != "" else "Organic"
+        tracker_name = install["tracker_name"] if install["tracker_name"] not in ("", "unknown") else OS.get_source(cls.os)
+        country = install["country_iso_code"] if install["country_iso_code"] else "unknown"
+        return install["install_datetime"].date(), \
+               publisher_name, \
+               tracker_name, \
+               install["app_version_name"], \
+               country
+
+
 
     @classmethod
     def get_timediff(cls, datetime_1=None, datetime_2=None, measure="min"):

@@ -22,7 +22,8 @@ class MySQLHandler():
     # части, на которые делится слишком большой кусок установок
     multiplier = 0.6
     installs_list = []
-    installs_dict={}
+    installs_dict_aid={}
+    installs_dict_id = {}
 
     # обработчики запросов событий и установок
     events_handler = None
@@ -68,13 +69,13 @@ class MySQLHandler():
                 # если нужно построчное подключение
                 # try:
 
-                time1=time.perf_counter()
+                #time1=time.perf_counter()
                 event_data = cls.result.fetchoneDict()
-                if time.perf_counter()-time1>1:
-                    print("Long fetch.",cls.i,': {0:.8f} sec'.format(time.perf_counter()-time1))
+                #if time.perf_counter()-time1>1:
+                #    print("Long fetch.",cls.i,': {0:.8f} sec'.format(time.perf_counter()-time1))
                 cls.i+=1
                 #event_data = cls.result.fetch_row(maxrows=1, how=1)
-                cls.time_0.append(time.perf_counter()-time1)
+                #cls.time_0.append(time.perf_counter()-time1)
                 # берем 0й элемент, т.к. оно приходит в виду (event_data,)
                 if event_data:
                     # отправляем событие в отчёт
@@ -190,4 +191,5 @@ class MySQLHandler():
         id_1=OS.get_aid(cls.installs_handler.os)
         id_2 =OS.get_id(cls.installs_handler.os)
         for install in cls.installs_list:
-            cls.installs_dict[install[id_1] if install[id_1] else install[id_2]]=install
+            cls.installs_dict_aid[install[id_1]]=install
+            cls.installs_dict_id[install[id_2]]=install

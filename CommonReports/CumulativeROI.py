@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from operator import truediv
-
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -44,9 +44,6 @@ def new_report(parser=None,
         period_start = datetime.strptime(period_start, "%Y-%m-%d").date()
     if isinstance(period_end, str):
         period_end = datetime.strptime(period_end, "%Y-%m-%d").date()
-        # if datetime.now().date() - timedelta(days=days_since_install) < period_end:
-        #    period_end = datetime.now().date() - timedelta(days=days_since_install)
-        #    print("Конец периода изменен на", period_end)
 
     # Списки CPI известных трекинговых ссылок
     cpi = {
@@ -86,7 +83,7 @@ def new_report(parser=None,
             return 1
 
     for os_str in os_list:
-        os = OS.get_os(os_str)
+        os_obj = OS.get_os(os_str)
         # БАЗА ДАННЫХ
         Report.set_app_data(parser=parser, event_class=Event, user_class=user_class, os=os_str, app=app,
                             user_status_check=False)
@@ -99,10 +96,10 @@ def new_report(parser=None,
 
         Report.set_events_data(additional_parameters=None,
                                period_start=period_start,
-                               period_end=period_end,
-                               min_version=min_version,
-                               max_version=max_version,
-                               countries_list=countries_list,
+                               period_end=None,
+                               min_version=None,
+                               max_version=None,
+                               countries_list=[],
                                events_list=events_list)
 
         # параметры
@@ -195,10 +192,6 @@ def new_report(parser=None,
                 # Переходим на следующий день
             previous_day_in_game = day_in_game
 
-            # print("new purchase:", Report.current_user.user_id,
-            #  Report.current_event.datetime, source, str(day_in_game) + "d",
-            #     get_price(Report.current_event.purchase), ltv)
-
         flush_user_data()
 
         # РАСЧЕТЫ И ВЫВОД
@@ -210,7 +203,7 @@ def new_report(parser=None,
 
             # Запись в отдельную таблицу
             writer = pd.ExcelWriter(
-                folder_dest+ OS.get_os_string(os) + " " + publisher + " Cummulative ROI.xlsx")
+                folder_dest+ OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx")
             # По каждоый трекинговой ссылке
             for source in sources[publisher].keys():
                 overall_source_arppu = dict.fromkeys(accumulating_parameters, 0)
@@ -226,7 +219,7 @@ def new_report(parser=None,
                     if (install["publisher_name"] == publisher or
                             (install["publisher_name"] == "" and publisher == "Organic")) and \
                             (install["tracker_name"] == source
-                             or (install["tracker_name"] == "unknown" and source == OS.get_source(os))) and install[
+                             or (install["tracker_name"] == "unknown" and source == OS.get_source(os_obj))) and install[
                         "install_datetime"].date() not in sources[publisher][source].keys() and \
                             not {install[OS.get_aid(Report.os)],
                                  install[OS.get_id(Report.os)]} & Report.user_skip_list:
@@ -244,7 +237,7 @@ def new_report(parser=None,
                                 (install["publisher_name"] == "" and publisher == "Organic")) and \
                                 (install["tracker_name"] == source or (
                                                 install["tracker_name"] == "unknown" and
-                                                source == OS.get_source(os))) and install[
+                                                source == OS.get_source(os_obj))) and install[
                             "install_datetime"].date() == install_date and \
                                 not {install[OS.get_aid(Report.os)],
                                      install[OS.get_id(Report.os)]} & Report.user_skip_list:
@@ -362,15 +355,18 @@ def new_report(parser=None,
                         **overall_source_roi
                     }, ignore_index=True)
 
+
                     # Рисуем графики
+                    if not os.path.exists(folder_dest+publisher+"/"):
+                        os.makedirs(folder_dest+publisher+"/")
                     Report.draw_plot(range(0, days_since_install + 1),
                                      { source + " ARPU": source_arpu_y},
                                      show=False,
-                                     folder=folder_dest+publisher+"/"+OS.get_os_string(os)+"/")
+                                     folder=folder_dest+publisher+"/"+OS.get_os_string(os_obj)+"/")
                     Report.draw_plot(range(0, days_since_install + 1),
                                      {source + " ROI": source_roi_y,
                                       " ": [100] * (days_since_install + 1)}, show=False,
-                                     folder=folder_dest+publisher+"/"+OS.get_os_string(os)+"/")
+                                     folder=folder_dest+publisher+"/"+OS.get_os_string(os_obj)+"/")
 
                 # Расчет доп метрик
                 # ARPPU
@@ -445,7 +441,7 @@ def new_report(parser=None,
             plt.plot(range(len(y_real_arpu)), y_real_arpu, '*', color="green", label="known")
             plt.plot(np.arange(0, 60, 1), y, '--', color="red", label="approximate")
             plt.legend()
-            title = OS.get_os_string(os) + " Прогноз ARPU по всем источникам " + publisher
+            title = OS.get_os_string(os_obj) + " Прогноз ARPU по всем источникам " + publisher
             plt.title(title)
             plt.savefig(folder_dest+title + ".png", bbox_inches='tight')
 
