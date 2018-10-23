@@ -34,39 +34,27 @@ def get_data(sql, db, by_row=True, name=""):
         print("Connecting from laptop. ", "Checked" if ENV == "server" else "Libraries error")
         db = MySQLdb.connect(host="localhost", user="root", passwd="hjkl098", db="analytics", charset='utf8')
         c = db.cursor(dictionary=True)
+
+    # подключение через курсор, возвращающий список словарей с данными
+    # запрос
+    #db.ping(True)
+    c.execute('SET NET_WRITE_TIMEOUT = 3600')
+    new_range_capacity=8388608*10
+    c.execute('SET range_optimizer_max_mem_size = {}'.format(new_range_capacity))
+    c.execute(sql)
+
     # в зависимости от метода получения данных подключаемся по-разному
-    if by_row:
-        try:
-            # # стандартное подключение
-            # db = MySQLdb.connect(host="localhost", user="root", passwd="0000", db=db+"_events", charset='utf8')
-            # # запрос
-            # db.query(sql)
-            # # получаем данные построчно
-            # result = db.use_result()
-
-            db.ping(True)
-            c = db.cursor()
-            c.execute('SET GLOBAL connect_timeout=28800')
-            c.execute('SET GLOBAL wait_timeout=28800')
-            c.execute('SET GLOBAL interactive_timeout=28800')
-
-            c.execute(sql)
-            result = c
-        except OperationalError:
-            raise OperationalError
-    else:
-        try:
-            # подключение через особый курсор, возвращающий список словарей с данными
-
-            # создаем курсор для этого подключения
-            c = db.cursor()
-            # запрос
-            c.execute(sql)
-            # результат будет списком
+    try:
+        if by_row:
+                #результат - поток
+                result = c
+        else:
+            # результат - список
             result = list(c)
-        # учитываем ошибку слишком длинного запроса
-        except OperationalError:
-            raise OperationalError
+            c.close()
+
+    except OperationalError:
+        raise OperationalError
 
     if result:
         return result, db

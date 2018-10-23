@@ -19,7 +19,8 @@ class QueryHandler():
                  max_version=None,
                  countries_list=[],
                  events_list=[],
-                 users_list=[]):
+                 users_list=[],
+                 order=True):
 
         self.select_row = ""
         self.from_row = ""
@@ -30,6 +31,7 @@ class QueryHandler():
         self.user_id1 = ""
         self.user_id2 = ""
 
+        self.os=os
         self.database = database
         self.app = app
         self.result = ""
@@ -49,8 +51,10 @@ class QueryHandler():
 
         self.result = "".join([self.select_row, self.from_row, self.where_row])
 
-        self.add_users_list(users_list)
-        self.add_order_parameters()
+        if database == "events":
+            self.add_users_list(users_list)
+        if order:
+            self.add_order_parameters()
 
     def add_select_parameters(self, parameters=[]):
         """
@@ -81,7 +85,7 @@ class QueryHandler():
         else:
             parameters = mandatory_parameters
         self.select_row = "select " + ",".join(parameters)
-
+        #/*+ NO_RANGE_OPTIMIZATION({} {}) */".format("events_android",OS.get_id(self.os))
     def add_from_database(self, os=OS.ios, app="sop", database="events"):
         """
         Добавление строки, из какой базы получать данные
@@ -251,7 +255,7 @@ class QueryHandler():
         :return:
         """
         if users_list:
-            user_id1_list = [install[self.user_id1] for install in users_list]
+            #user_id1_list = [install[self.user_id1] for install in users_list]
             user_id2_list = [install[self.user_id2] for install in users_list]
 
             #     self.users_row = """
@@ -286,6 +290,6 @@ class QueryHandler():
         # print("".join([self.result, self.users_row, self.order_row]))
 
         query = "".join([self.result, self.users_row, self.order_row])
-        file = open("sql " + self.user_id1 + " " + self.database + ".txt", "w")
+        file = open("sql " + OS.get_os_string(self.os) + " " + self.database + ".txt", "w")
         file.write(query)
         return query

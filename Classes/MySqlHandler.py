@@ -5,8 +5,10 @@ except:
 
 #from _mysql_exceptions import OperationalError
 from report_api.Data.Data import get_data
-from report_api.Utilities.Utils import time_count, time_medium_2
-
+from report_api.Utilities.Utils import time_count
+from report_api.OS import OS
+from  report_api import Report
+import time
 
 class MySQLHandler():
     """
@@ -20,6 +22,7 @@ class MySQLHandler():
     # части, на которые делится слишком большой кусок установок
     multiplier = 0.6
     installs_list = []
+    installs_dict={}
 
     # обработчики запросов событий и установок
     events_handler = None
@@ -31,18 +34,13 @@ class MySQLHandler():
     result = None
     db = None
 
+    #время fetch
+    time_0=[]
+    i=0
+
     # подключение закончено (получены все chunk событий из запроса)
     completed_connection = False
-    '''
-    def __init__(self, events_handler=None, installs_handler=None, users_chunk=0):
-        MySQLHandler.events_handler = events_handler
-        MySQLHandler.installs_handler = installs_handler
-        if installs_handler:
-            MySQLHandler.current_chunk = 0
-            MySQLHandler.users_chunk = users_chunk
-            MySQLHandler.get_installs()
-        MySQLHandler.completed_connection = False
-    '''
+
 
     @classmethod
     def reset(cls):
@@ -63,14 +61,20 @@ class MySQLHandler():
 
     @classmethod
     def fetch_next_event(cls):
+
         while True:
 
             if cls.by_row and cls.result:
                 # если нужно построчное подключение
                 # try:
-                #event_data = cls.result.fetch_row(maxrows=1, how=1)
-                event_data = cls.result.fetchone()
 
+                time1=time.perf_counter()
+                event_data = cls.result.fetchoneDict()
+                if time.perf_counter()-time1>1:
+                    print("Long fetch.",cls.i,': {0:.8f} sec'.format(time.perf_counter()-time1))
+                cls.i+=1
+                #event_data = cls.result.fetch_row(maxrows=1, how=1)
+                cls.time_0.append(time.perf_counter()-time1)
                 # берем 0й элемент, т.к. оно приходит в виду (event_data,)
                 if event_data:
                     # отправляем событие в отчёт
@@ -78,32 +82,17 @@ class MySQLHandler():
                     return event_data
                 elif cls.completed_connection:
                     # если все данные получены, закрываем подключение и останавливаем отчёт
+                    cls.result.close()
                     cls.db.close()
                     cls.result = None
                     return None
                 else:
                     # закрываем предыдущее подключение и уходим в цикл
+                    cls.result.close()
                     cls.db.close()
                     cls.result = None
-                    # except OperationalError as er:
-                    #     print(er.args)
-                    #     # подключение не завершено
-                    #     cls.completed_connection = False
-                    #     cls.result=None
-                    #     cls.by_row=False
-                    #     # устанавливаем новые chunk установок
-                    #     if cls.installs_list:
-                    #         cls.users_chunk = int(cls.users_chunk * cls.multiplier) if cls.users_chunk != 0 else int(
-                    #             len(cls.installs_list) * cls.multiplier)
-                    #         cls.current_chunk = 0
-                    #         print("Ошибка запроса к базе. Слишком долгий запрос")
-                    #     else:
-                    #         print("Ошибка запроса к базе.")
-                    #         break
-                    #     cls.multiplier=cls.multiplier*0.8
-                    #     continue
 
-            elif not cls.by_row and cls.result:
+            elif (not cls.by_row) and cls.result:
                 # если в массиве что-то есть, отправляем первое событие
                 return cls.result.pop()
             # если подключение не завершено, получаем следующую порцию событий
@@ -118,8 +107,8 @@ class MySQLHandler():
         Добавление списка установок в запрос
         :return:
         """
-        # if cls.users_chunk == 0 and len(cls.installs_list) > 10000:
-        #     cls.users_chunk = 10000
+        # if cls.users_chunk == 0 and len(cls.installs_list) > 15000:
+        #     cls.users_chunk = 15000
         #     cls.current_chunk = 0
         # если chunk нулевой, добавляем все установки сразу, если нет, то добавляем следующий chunk
         if cls.users_chunk != 0:
@@ -147,7 +136,7 @@ class MySQLHandler():
                 cls._update_events_handler()
             # вывод сообщения о следующем chunk
             if cls.users_chunk != 0:
-                print("Выставлен размер chunk'а: ", str((cls.current_chunk-1) * cls.users_chunk) + "-" +
+                print("Выставлен chunk пользователей: ", str((cls.current_chunk-1) * cls.users_chunk) + "-" +
                       str(min(cls.current_chunk  * cls.users_chunk, len(cls.installs_list))), " / ",
                       len(cls.installs_list))
             try:
@@ -158,6 +147,7 @@ class MySQLHandler():
 
                 # если получаем chunk'ами и подключение завершено, то отключаем базу
                 if not cls.by_row and cls.completed_connection:
+                    cls.result.close()
                     cls.db.close()
 
             # учитываем ошибку слишком длинного запроса
@@ -196,3 +186,8 @@ class MySQLHandler():
         result, db = get_data(query, db=cls.app, by_row=False, name="Запрос к базе установок.")
         cls.installs_list = result
         db.close()
+        #словарь для более выстрого доступа к конкретному пользователю
+        id_1=OS.get_aid(cls.installs_handler.os)
+        id_2 =OS.get_id(cls.installs_handler.os)
+        for install in cls.installs_list:
+            cls.installs_dict[install[id_1] if install[id_1] else install[id_2]]=install

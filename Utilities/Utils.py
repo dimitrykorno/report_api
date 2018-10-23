@@ -104,11 +104,11 @@ def get_timediff(datetime_1=None, datetime_2=None, measure="min"):
     :return: разница во времени, по умолчанию - между текущим и предыдущим событием
     '''
 
-    if measure == "min":
+    if measure in ("min","m"):
         return abs(datetime_1.timestamp() - datetime_2.timestamp()) / 60
-    elif measure == "sec":
+    elif measure in ("sec","s"):
         return abs(datetime_1.timestamp() - datetime_2.timestamp())
-    elif measure == "day":
+    elif measure in ("day","d"):
         if not type(datetime_1) is datetime.date:
             datetime_1 = datetime_1.date()
         if not type(datetime_2) is datetime.date:
@@ -337,7 +337,7 @@ def draw_plot(x, y_dict, xtick_steps=1, xticks_move=0, x_ticks_labels=list(), ti
     plt.title(title)
     legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True,
                        ncol=5)
-    plt.savefig(folder + "/" + title + "." + format, bbox_extra_artists=(legend,), bbox_inches='tight')
+    plt.savefig(folder + title + "." + format, bbox_extra_artists=(legend,), bbox_inches='tight')
     if show:
         plt.show()
     plt.close()
