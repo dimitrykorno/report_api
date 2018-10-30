@@ -174,8 +174,8 @@ class QueryHandler():
         if countries_list:
             countries = """
             and 
-            country_iso_code in ({})
-            """.format(','.join(countries_list))
+            country_iso_code in ('{}')
+            """.format("','".join(countries_list))
 
         # добавление списка событий event_name  и json
         # в списке все параметры идут через and, в множестве через in
