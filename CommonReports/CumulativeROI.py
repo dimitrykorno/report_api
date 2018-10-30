@@ -11,7 +11,6 @@ from report_api.Utilities.Utils import time_count, log_approximation
 from Classes.Events import *
 
 
-
 # noinspection PyDefaultArgument,PyDefaultArgument
 def new_report(parser=None,
                user_class=None,
@@ -119,6 +118,7 @@ def new_report(parser=None,
         # ПОЛЬЗОВАТЕЛЬСКИЕ ПАРАМЕТРЫ
         user_accumulative = dict.fromkeys(accumulating_parameters, 0)
         user_transactions = []
+        transactions_report = []
         ltv = 0
         previous_day_in_game = 0
 
@@ -147,7 +147,13 @@ def new_report(parser=None,
                 sources[publisher][source][Report.previous_user.install_date][param] += user_accumulative[param]
             if len(user_transactions) > 0:
                 sources[publisher][source][Report.previous_user.install_date]["Paying"] += 1
-                transactions[publisher][source].append(user_transactions)
+                transactions[publisher][source].append([transaction.price for transaction in user_transactions])
+                for transaction in user_transactions:
+                    transactions_report.append({"user id": Report.previous_user.user_id, "publisher": publisher,
+                                                "source": source, "price": transaction.price,
+                                                "install date": Report.previous_user.install_date,
+                                                "purchase date": transaction.datetime.date(),
+                                                "last enter date": Report.previous_user.last_enter.date()})
             for user_d in user_dau.keys():
                 if user_dau[user_d] is not None:
                     dau[publisher][source][user_d]["Users"] += 1
@@ -179,16 +185,16 @@ def new_report(parser=None,
                 for day in range(previous_day_in_game, day_in_game):
                     user_accumulative[str(day) + "d"] = ltv
             if Report.current_event.datetime.date() in user_dau.keys() and user_dau[
-                    Report.current_event.datetime.date()] is None:
+                Report.current_event.datetime.date()] is None:
                 user_dau[Report.current_event.datetime.date()] = 0
 
             # Обновляем LTV новой покупкой и Revenue в DAU
-            if issubclass(type(Report.current_event),PurchaseEvent):
+            if issubclass(type(Report.current_event), PurchaseEvent):
                 ltv += Report.current_event.price
                 if Report.current_event.datetime.date() in user_dau.keys():
                     user_dau[Report.current_event.datetime.date()] += Report.current_event.price
                 # Сохраняем транзации для расчета метрик
-                user_transactions.append(Report.current_event.price)
+                user_transactions.append(Report.current_event)
                 # Переходим на следующий день
             previous_day_in_game = day_in_game
 
@@ -203,7 +209,7 @@ def new_report(parser=None,
 
             # Запись в отдельную таблицу
             writer = pd.ExcelWriter(
-                folder_dest+ OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx")
+                folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx")
             # По каждоый трекинговой ссылке
             for source in sources[publisher].keys():
                 overall_source_arppu = dict.fromkeys(accumulating_parameters, 0)
@@ -355,18 +361,17 @@ def new_report(parser=None,
                         **overall_source_roi
                     }, ignore_index=True)
 
-
                     # Рисуем графики
-                    if not os.path.exists(folder_dest+publisher+"/"+OS.get_os_string(os_obj)+"/"):
-                        os.makedirs(folder_dest+publisher+"/"+OS.get_os_string(os_obj)+"/")
+                    if not os.path.exists(folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/"):
+                        os.makedirs(folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/")
                     Report.draw_plot(range(0, days_since_install + 1),
-                                     { source + " ARPU": source_arpu_y},
+                                     {source + " ARPU": source_arpu_y},
                                      show=False,
-                                     folder=folder_dest+publisher+"/"+OS.get_os_string(os_obj)+"/")
+                                     folder=folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/")
                     Report.draw_plot(range(0, days_since_install + 1),
                                      {source + " ROI": source_roi_y,
                                       " ": [100] * (days_since_install + 1)}, show=False,
-                                     folder=folder_dest+publisher+"/"+OS.get_os_string(os_obj)+"/")
+                                     folder=folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/")
 
                 # Расчет доп метрик
                 # ARPPU
@@ -443,7 +448,17 @@ def new_report(parser=None,
             plt.legend()
             title = OS.get_os_string(os_obj) + " Прогноз ARPU по всем источникам " + publisher
             plt.title(title)
-            plt.savefig(folder_dest+title + ".png", bbox_inches='tight')
+            plt.savefig(folder_dest + title + ".png", bbox_inches='tight')
 
             plt.close()
         print("Not found CPI sources", not_sound_cpi)
+
+        df_transactions = pd.DataFrame(index=[],columns=["user id","publisher","source","install date","purchase date","price","last enter date"])
+        for transaction in transactions_report:
+            df_transactions=df_transactions.append({
+                **transaction
+            },ignore_index=True)
+        writer = pd.ExcelWriter(
+            folder_dest + OS.get_os_string(os_obj) + " Transactions.xlsx")
+        df_transactions.to_excel(writer, index=False)
+        writer.save()
