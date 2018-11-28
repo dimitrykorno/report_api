@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from operator import truediv
 import os
+from time import sleep
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -18,7 +19,7 @@ def new_report(parser=None,
                folder_dest=None,
                events_list=[],
                os_list=["iOS", "Android"],
-               days_since_install=28,
+               days_since_install=120,
                period_start="2018-06-19",
                period_end=None,
                min_version=None,
@@ -52,7 +53,11 @@ def new_report(parser=None,
         "AppStore": 0,
         "Amazon": 0,
         "KB pro Masha": 15,
+        "KB pro banner 2": 15,
+        "Banner 1": 15,
+        "KB pro banner 1": 15,
         "facebook_android": 0,
+        "total": 0,
 
         "Mult_8_video_eng": 36.1,
         "Mult_1_eng": 40,
@@ -106,8 +111,14 @@ def new_report(parser=None,
         accumulating_parameters = [str(i) + "d" for i in range(0, days_since_install + 1)]
         parameters += accumulating_parameters
         sources = {}
+        sources["total"] = {}
+        sources["total"]["total"] = {}
         transactions = {}
+        transactions["total"] = {}
+        transactions["total"]["total"] = []
         dau = {}
+        dau["total"] = {}
+        dau["total"]["total"] = {}
         user_dau = {}
         if not period_end:
             period_end = datetime.now().date()
@@ -122,50 +133,65 @@ def new_report(parser=None,
         ltv = 0
         previous_day_in_game = 0
 
+        #######################################################################################################################
+        revenue=0
         # Запись пользовательских данных в общие
         def flush_user_data():
-            # if len(user_transactions)>0:
-            #    print(Report.previous_user.user_id, Report.previous_user.install_date)
-            #    print(user_dau)
-            #   print(user_transactions)
+            # добиваем Ltv До конца нужного периода
             for d1 in range(day_in_game, days_since_install + 1):
                 user_accumulative[str(d1) + "d"] = ltv
-            if publisher not in sources.keys():
+            if publisher not in sources:
                 sources[publisher] = {}
                 transactions[publisher] = {}
                 dau[publisher] = {}
-            if source not in sources[publisher].keys():
+            if source not in sources[publisher]:
                 sources[publisher][source] = {}
                 transactions[publisher][source] = []
                 dau[publisher][source] = {}
                 for date_t in rrule(DAILY, dtstart=period_start,
                                     until=(period_end + timedelta(days=days_since_install))):
                     dau[publisher][source][date_t.date()] = {"Users": 0, "Revenue": 0}
-            if Report.previous_user.install_date not in sources[publisher][source].keys():
+                    dau["total"]["total"][date_t.date()] = {"Users": 0, "Revenue": 0}
+            # создаем "строку с данным ипо этой дате установки
+            if Report.previous_user.install_date not in sources["total"]["total"]:
+                sources["total"]["total"][Report.previous_user.install_date] = dict.fromkeys(parameters, 0)
+            if Report.previous_user.install_date not in sources[publisher][source]:
                 sources[publisher][source][Report.previous_user.install_date] = dict.fromkeys(parameters, 0)
+            # переносим пользовательские параметры
             for param in accumulating_parameters:
                 sources[publisher][source][Report.previous_user.install_date][param] += user_accumulative[param]
+                sources["total"]["total"][Report.previous_user.install_date][param] += user_accumulative[param]
+
+            # обработка списка транзакций
             if len(user_transactions) > 0:
                 sources[publisher][source][Report.previous_user.install_date]["Paying"] += 1
+                sources["total"]["total"][Report.previous_user.install_date]["Paying"] += 1
                 transactions[publisher][source].append([transaction.price for transaction in user_transactions])
+                transactions["total"]["total"].append([transaction.price for transaction in user_transactions])
                 for transaction in user_transactions:
                     transactions_report.append({"user id": Report.previous_user.user_id, "publisher": publisher,
                                                 "source": source, "price": transaction.price,
                                                 "install date": Report.previous_user.install_date,
                                                 "purchase date": transaction.datetime.date(),
                                                 "last enter date": Report.previous_user.last_enter.date()})
-            for user_d in user_dau.keys():
+            for user_d in user_dau:
                 if user_dau[user_d] is not None:
                     dau[publisher][source][user_d]["Users"] += 1
                     dau[publisher][source][user_d]["Revenue"] += user_dau[user_d]
-                    # if len(user_transactions) > 0:
-                    #    print(dau[publisher][source])
+                    dau["total"]["total"][user_d]["Users"] += 1
+                    dau["total"]["total"][user_d]["Revenue"] += user_dau[user_d]
+
+
+                    ########################################################################################################################
 
         # Цикл обработки данных
         while Report.get_next_event():
 
             # Переносим пользовательские данные в общие и обнуляем пользователськие парамтеры
             if Report.is_new_user():
+                if ltv > 400:
+                    print(ltv, Report.previous_user.user_id)
+                revenue += ltv
                 flush_user_data()
                 user_accumulative = dict.fromkeys(accumulating_parameters, 0)
                 user_transactions = []
@@ -184,34 +210,37 @@ def new_report(parser=None,
             if day_in_game > previous_day_in_game:
                 for day in range(previous_day_in_game, day_in_game):
                     user_accumulative[str(day) + "d"] = ltv
-            if Report.current_event.datetime.date() in user_dau.keys() and user_dau[
+            if Report.current_event.datetime.date() in user_dau and user_dau[
                 Report.current_event.datetime.date()] is None:
                 user_dau[Report.current_event.datetime.date()] = 0
 
             # Обновляем LTV новой покупкой и Revenue в DAU
             if issubclass(type(Report.current_event), PurchaseEvent):
                 ltv += Report.current_event.price
+                user_accumulative[str(day_in_game) + "d"] = ltv
+
                 if Report.current_event.datetime.date() in user_dau.keys():
                     user_dau[Report.current_event.datetime.date()] += Report.current_event.price
                 # Сохраняем транзации для расчета метрик
                 user_transactions.append(Report.current_event)
-                # Переходим на следующий день
+            # Переходим на следующий день
             previous_day_in_game = day_in_game
 
         flush_user_data()
+        print(revenue)
+        #######################################################################################################################
 
         # РАСЧЕТЫ И ВЫВОД
         # По каждому источнику
-        for publisher in sources.keys():
+        for publisher in sources:
             # Общее ARPU и установки по паблишеру
             overall_publisher_arpu = [0] * (days_since_install + 1)
             overall_publisher_installs = 0
 
             # Запись в отдельную таблицу
-            writer = pd.ExcelWriter(
-                folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx")
+            writer = pd.ExcelWriter(folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx")
             # По каждоый трекинговой ссылке
-            for source in sources[publisher].keys():
+            for source in sources[publisher]:
                 overall_source_arppu = dict.fromkeys(accumulating_parameters, 0)
                 overall_source_arpu = dict.fromkeys(parameters, 0)
                 overall_source_arpdau = dict.fromkeys(parameters, 0)
@@ -222,46 +251,51 @@ def new_report(parser=None,
 
                 # Заполняем пропущенные дни, в которых не было покупок
                 for install in Report.get_installs():
-                    if (install["publisher_name"] == publisher or
-                            (install["publisher_name"] == "" and publisher == "Organic")) and \
-                            (install["tracker_name"] == source
-                             or (install["tracker_name"] == "unknown" and source == OS.get_source(os_obj))) and install[
-                        "install_datetime"].date() not in sources[publisher][source].keys() and \
-                            not {install[OS.get_aid(Report.os)],
-                                 install[OS.get_id(Report.os)]} & Report.user_skip_list:
-                        # print(install["install_datetime"].date())
-                        # print()
+                    if (install["publisher_name"] == publisher
+                        or (install["publisher_name"] == "" and publisher == "Organic")
+                        or publisher == "total") \
+                            and (install["tracker_name"] == source
+                                 or (install["tracker_name"] == "unknown" and source == OS.get_source(os_obj))
+                                 or source == "total") \
+                            and not {install[OS.get_aid(Report.os)],
+                                     install[OS.get_id(Report.os)]} & Report.user_skip_list \
+                            and install["install_datetime"].date() not in sources[publisher][source]:
                         sources[publisher][source][install["install_datetime"].date()] = dict.fromkeys(parameters, 0)
 
                 # Цикл по каждому дню
-                for install_date in sources[publisher][source].keys():
+                revenue = 0
+                for install_date in sources[publisher][source]:
                     installs_number = 0
                     app_version = None
                     # Считаем количество установок в этот день и версию устанавливаемого приложения
                     for install in Report.get_installs():
-                        if (install["publisher_name"] == publisher or
-                                (install["publisher_name"] == "" and publisher == "Organic")) and \
-                                (install["tracker_name"] == source or (
-                                                install["tracker_name"] == "unknown" and
-                                                source == OS.get_source(os_obj))) and install[
-                            "install_datetime"].date() == install_date and \
-                                not {install[OS.get_aid(Report.os)],
-                                     install[OS.get_id(Report.os)]} & Report.user_skip_list:
+                        if (install["publisher_name"] == publisher
+                            or (install["publisher_name"] == "" and publisher == "Organic")
+                            or publisher == "total") \
+                                and (install["tracker_name"] == source
+                                     or (install["tracker_name"] == "unknown" and source == OS.get_source(os_obj))
+                                     or source == "total") \
+                                and install["install_datetime"].date() == install_date \
+                                and not {install[OS.get_aid(Report.os)],
+                                         install[OS.get_id(Report.os)]} & Report.user_skip_list:
                             installs_number += 1
                             app_version = install["app_version_name"]
                     sources[publisher][source][install_date]["Installs"] = installs_number
-                    # print(publisher, source, install_date, sources[publisher][source][install_date])
+
+                    # добавялем данные и покупках в метрики
+                    revenue += sources[publisher][source][install_date][str(days_since_install) + "d"]
                     for i in range(0, days_since_install + 1):
                         overall_source_arpu[str(i) + "d"] += sources[publisher][source][install_date][str(i) + "d"]
                         overall_source_arppu[str(i) + "d"] += sources[publisher][source][install_date][str(i) + "d"]
                         overall_source_arpdau[str(i) + "d"] += sources[publisher][source][install_date][str(i) + "d"]
+
+                        # номрализуем ARPU
                         if sources[publisher][source][install_date]["Installs"] > 0:
                             sources[publisher][source][install_date][str(i) + "d"] = round(
                                 sources[publisher][source][install_date][str(i) + "d"] /
                                 sources[publisher][source][install_date]["Installs"], 2)
                         else:
                             sources[publisher][source][install_date][str(i) + "d"] = 0
-                    # print(publisher, source,sources[publisher][source][install_date]["Installs"])
 
                     # Добавляем в таблицу строку с ARPU и данными об установках за этот день
                     df = df.append({
@@ -292,13 +326,13 @@ def new_report(parser=None,
                             "Day": "ROI",
                             **roi
                         }, ignore_index=True)
-
+                print(publisher, source, revenue)
                 # Сортируем таблицу по дню установки и типу строки (в поле DAY стоит тип данных - ARPU или ROI)
                 df.sort_values(by=["Install date", "Day"], inplace=True)
 
                 # Считаем общее ARPU по источнику (и добавляем в общее ARPU паблишера)
                 overall_source_roi = dict.fromkeys(parameters, 0)
-                for install_date in sources[publisher][source].keys():
+                for install_date in sources[publisher][source]:
                     for i in range(0, days_since_install + 1):
                         overall_publisher_arpu[i] += sources[publisher][source][install_date][str(i) + "d"]
                     overall_source_arpu["Installs"] += sources[publisher][source][install_date]["Installs"]
@@ -361,6 +395,8 @@ def new_report(parser=None,
                         **overall_source_roi
                     }, ignore_index=True)
 
+                    ################### графики и доп метркии ##############################################################
+
                     # Рисуем графики
                     if not os.path.exists(folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/"):
                         os.makedirs(folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/")
@@ -374,6 +410,7 @@ def new_report(parser=None,
                                      folder=folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/")
 
                 # Расчет доп метрик
+
                 # ARPPU
                 if len(transactions[publisher][source]) > 0:
                     for i in range(0, days_since_install + 1):
@@ -430,8 +467,15 @@ def new_report(parser=None,
                 # Вывод и печать в Excel
                 # print(df.to_string(index=False))
                 df.to_excel(excel_writer=writer, sheet_name=source, index=False)
-                writer.save()
 
+            while True:
+                try:
+                    writer.save()
+                    break
+                except PermissionError:
+                    print("!!! CLOSE FILE !!!",
+                          folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx")
+                    sleep(2)
             # График общего ARPU по паблишеру
             plt.figure(figsize=(16, 8))
             if overall_publisher_installs > 0:
@@ -442,9 +486,9 @@ def new_report(parser=None,
                 y_real_arpu = [0] * 20
                 print(publisher, "no installs")
             approximator = log_approximation(range(len(y_real_arpu)), y_real_arpu)
-            y = approximator(np.arange(0, 60, 1))
+            y = approximator(np.arange(0, days_since_install, 1))
             plt.plot(range(len(y_real_arpu)), y_real_arpu, '*', color="green", label="known")
-            plt.plot(np.arange(0, 60, 1), y, '--', color="red", label="approximate")
+            plt.plot(np.arange(0, days_since_install, 1), y, '--', color="red", label="approximate")
             plt.legend()
             title = OS.get_os_string(os_obj) + " Прогноз ARPU по всем источникам " + publisher
             plt.title(title)
@@ -453,12 +497,21 @@ def new_report(parser=None,
             plt.close()
         print("Not found CPI sources", not_sound_cpi)
 
-        df_transactions = pd.DataFrame(index=[],columns=["user id","publisher","source","install date","purchase date","price","last enter date"])
+        df_transactions = pd.DataFrame(index=[],
+                                       columns=["user id", "publisher", "source", "install date", "purchase date",
+                                                "price", "last enter date"])
         for transaction in transactions_report:
-            df_transactions=df_transactions.append({
+            df_transactions = df_transactions.append({
                 **transaction
-            },ignore_index=True)
-        writer = pd.ExcelWriter(
-            folder_dest + OS.get_os_string(os_obj) + " Transactions.xlsx")
+            }, ignore_index=True)
+
+
+        writer = pd.ExcelWriter(folder_dest + OS.get_os_string(os_obj) + " Transactions.xlsx")
         df_transactions.to_excel(writer, index=False)
-        writer.save()
+        while True:
+            try:
+                writer.save()
+                break
+            except PermissionError:
+                print("!!! CLOSE FILE !!!", folder_dest + OS.get_os_string(os_obj) + " Transactions.xlsx")
+                sleep(2)

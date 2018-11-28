@@ -1,47 +1,44 @@
 from collections import OrderedDict
 from matplotlib import pyplot as plt
-from Classes.Events import *
-from Data import Parse
-from Classes.User import User
-from report_api.Report import Report
 from report_api.Utilities.Utils import time_count
-
+from report_api.OS import OS
+from report_api.Data import Data
 app = "sop"
 
 
 # noinspection PyDefaultArgument,PyDefaultArgument
 @time_count
 def new_report(os_list=["iOS"],
-               period_start=None,
-               period_end=None,
-               min_version=None,
-               max_version=None,
-               countries_list=[]):
+               parser=None,
+               app=None,
+               folder_dest=None,
+               app_version='7.0',
+               users_limit=10000 ):
 
     for os_str in os_list:
-        # БАЗА ДАННЫХ
-        Report.set_app_data(parser=Parse, user_class=User, event_class=Event,
-                            os=os_str, app=app, user_status_check=False)
-
-        Report.set_installs_data(additional_parameters=[],
-                                 period_start=period_start,
-                                 period_end=period_end,
-                                 min_version=min_version,
-                                 max_version=max_version,
-                                 countries_list=countries_list)
-        Report.set_events_data(additional_parameters=[],
-                               period_start=period_start,
-                               period_end=None,
-                               min_version=None,
-                               max_version=None,
-                               events_list=[])
+        user_aid = OS.get_aid(os_str)
+        sql = """
+                    select {2}, event_name, event_json, MAX(event_datetime)
+                    from {0}_events.events_{1}
+                    where {2} in (select ios_ifa
+                                        from {0}_events.installs_{1}
+                                        where {2}<>"" 
+                                        group by {2}, app_version_name
+                                        having MIN(app_version_name)={4}
+                                        )
+                    group by {2}
+                    LIMIT {3}
+                    """.format(app, os_str.lower(), user_aid, users_limit, app_version)
+        file = open("sql " + os_str.lower()+ " events.txt", "w")
+        file.write(sql)
+        file.close()
+        last_events, db = Data.get_data(sql=sql, db=app,by_row=False, name="Загрузка последних событий.")
+        last_events = [parser.parse_event(event["event_name"],event["event_json"],event["MAX(event_datetime)"]) for event  in last_events]
+        db.close()
         events = {}
 
-        while Report.get_next_event():
-
-            if Report.is_new_user():
-                # Анализируется последние событие каждого игрока
-                last_event_class = Report.previous_event.__class__.__name__
+        for event in last_events:
+                last_event_class = event.__class__.__name__
                 # Оно добавляется в список последних событий
                 if last_event_class not in events:
                     events[last_event_class] = 0
@@ -53,5 +50,5 @@ def new_report(os_list=["iOS"],
         plt.figure(figsize=(15, 6))
         plt.barh(range(len(list(ordered_events.values()))), list(ordered_events.values()))
         plt.yticks(range(len(list(ordered_events.values()))), list(ordered_events.keys()))
-        plt.savefig("Results/Гистограма последнего действия/last_event_histo " + os_str + ".png")
+        plt.savefig(folder_dest+"last_event_histo " + os_str + ".png")
         plt.show()

@@ -1,11 +1,17 @@
 from report_api.Data.Data import get_data
 from report_api.Utilities.Utils import time_count
 import matplotlib.pyplot as plt
-
+from report_api.OS import OS
 
 # noinspection PyDefaultArgument,PyDefaultArgument
 @time_count
-def new_report(os_list=["iOS"], max_days=100, app_versions=['5.1', '5.3']):
+def new_report(os_list=["iOS"],
+               folder_dest=None,
+               app="sop",
+               max_days=100,
+               app_versions=['5.1', '5.3'],
+               users_limit=10000,
+               app_entry_event_check=""):
     """
     Построение графиков Lifetime по одному/нескольким версиям одновременно
     :param os_list:
@@ -16,20 +22,26 @@ def new_report(os_list=["iOS"], max_days=100, app_versions=['5.1', '5.3']):
     for os_str in os_list:
         plt.figure(figsize=(12, 8))
         plt.title("Отвалы " + os_str)
+        user_aid=OS.get_aid(os_str)
         for app_version in app_versions:
             # Пользователи, у которых первое событие с нужной версией приложения
             sql = """
             select (MAX(event_timestamp)-MIN(event_timestamp)) as lifetime_sec
-            from sop_events.events_{}
-            where ios_ifa in (select ios_ifa
-                                from sop_events.events_ios
-                                where ios_ifa<>"" and event_json like "%InitGameState%"
-                                group by ios_ifa, app_version_name
-                                having MIN(app_version_name)={})
-                    and event_json like "%InitGameState%"
-            group by ios_ifa
-            """.format(os_str, app_version)
-            lifetime_values, db = get_data(sql=sql, by_row=False, name="Загрузка лайфтаймов.")
+            from {0}_events.events_{1}
+            where {2} in (select ios_ifa
+                                from {0}_events.installs_{1}
+                                where {2}<>"" 
+                                group by {2}, app_version_name
+                                having MIN(app_version_name)={5}
+                                )
+                    and {3}
+            group by {2}
+            LIMIT {4}
+            """.format(app,os_str.lower(),user_aid ,app_entry_event_check,users_limit,app_version)
+            file = open("sql " + os_str.lower() + " events.txt", "w")
+            file.write(sql)
+            file.close()
+            lifetime_values, db = get_data(sql=sql, db=app, by_row=False, name="Загрузка лайфтаймов.")
             lifetime_values = [value["lifetime_sec"] for value in lifetime_values]
             db.close()
 
@@ -48,6 +60,6 @@ def new_report(os_list=["iOS"], max_days=100, app_versions=['5.1', '5.3']):
 
             print("Average lifetime", app_version, ":", average_lifetime, "дней")
             plt.plot(range(len(lt)), lt, label=app_version)
-            plt.savefig("Results/Гистограма отвалов по lifetime/Отвалы по дням " + app_version + " " + os_str + ".png")
+            plt.savefig(folder_dest+"Отвалы по дням " + app_version + " " + os_str + ".png")
         plt.legend()
         plt.show()
