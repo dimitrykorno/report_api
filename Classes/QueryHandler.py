@@ -31,7 +31,7 @@ class QueryHandler():
         self.user_id1 = ""
         self.user_id2 = ""
 
-        self.os=os
+        self.os = os
         self.database = database
         self.app = app
         self.result = ""
@@ -85,7 +85,8 @@ class QueryHandler():
         else:
             parameters = mandatory_parameters
         self.select_row = "select " + ",".join(parameters)
-        #/*+ NO_RANGE_OPTIMIZATION({} {}) */".format("events_android",OS.get_id(self.os))
+        # /*+ NO_RANGE_OPTIMIZATION({} {}) */".format("events_android",OS.get_id(self.os))
+
     def add_from_database(self, os=OS.ios, app="sop", database="events"):
         """
         Добавление строки, из какой базы получать данные
@@ -178,67 +179,40 @@ class QueryHandler():
             """.format("','".join(countries_list))
 
         # добавление списка событий event_name  и json
-        # в списке все параметры идут через and, в множестве через in
         events = ""
-        for event in events_list:
+        for index, event in enumerate(events_list):
             if events == "":
                 events = """
         and 
         (
-        """
+                """
 
-            events += "("
             event_names_list = []
-            # приводим к виду списка, чтобы итерироваться (даже если 1)
-            if not isinstance(event[0], list):
-                event_names_list.append(event[0])
-            else:
-                event_names_list = event[0]
-            for event_name in event_names_list:
-                if isinstance(event_name, set):
-                    events += 'event_name in ("' + '","'.join(event_name) + '")'
-                elif "%" in event_name:
-                    if event_name[:3] == "not":
-                        events += "event_name not like '" + event_name[4:] + "'"
-                    else:
-                        events += "event_name like '" + event_name + "'"
+            if event[0] != "":
+                # приводим к виду списка, чтобы итерироваться (даже если 1)
+                if not isinstance(event[0], list):
+                    event_names_list.append(event[0])
                 else:
-                    events += "event_name = '" + event_name + "'"
-                if not event_name is event_names_list[-1]:
-                    if event_name[:3] == "not":
-                        events += " and "
-                    else:
-                        events += " or "
-            events += ")"
+                    event_names_list = event[0]
+                events += QueryHandler.form_line(event_names_list, "event_name")
 
             if len(event) > 1:
-                events += "and ("
+                if event[0] != "":
+                    events += " and "
                 json_list = []
                 # приводим к виду списка, чтобы итерироваться (даже если 1)
                 if not isinstance(event[1], list):
                     json_list.append(event[1])
                 else:
                     json_list = event[1]
-                for event_json in json_list:
-                    if isinstance(event_json, set):
-                        event_json += "event_json in ('" + "','".join(event_json) + "')"
-                    elif "%" in event_json:
-                        if event_json[:3] == "not":
-                            events += "event_json not like '" + event_json[4:] + "'"
-                        else:
-                            events += "event_json like '" + event_json + "'"
-                    else:
-                        events += "event_json = '" + event_json + "'"
-                    if not event_json is json_list[-1]:
-                        events += " or "
-                events += ")"
+                events += QueryHandler.form_line(json_list, "event_json")
 
-            if not event is events_list[-1]:
+            if index != len(events_list) - 1:
                 events += """
-        or
-        """
-            else:
-                events += """
+                or
+                """
+        if events != "":
+            events += """
         )"""
 
         for row in (min_app_version, max_app_version, datetime_period, countries, events):
@@ -248,6 +222,57 @@ class QueryHandler():
 
                 # print(self.where_row)
 
+    # set - in (_,_,_ )
+    # list _ or _or _ or _
+    # tuple _ and _ and _ and _
+    @staticmethod
+    def form_line(event_name, column_name):
+        line = "( "
+        if isinstance(event_name, str):
+            event_name = [event_name]
+        if isinstance(event_name, set):
+            positive = [e for e in event_name if not e.startswith("not ")]
+            negative = [e[4:] for e in event_name if e.startswith("not ")]
+            if positive:
+                line += column_name + " in ('" + "','".join(positive) + "')"
+            if positive and negative:
+                line += ' and '
+            if negative:
+                line += column_name + " in ('" + "','".join(negative) + "')"
+        elif isinstance(event_name, list) or isinstance(event_name, tuple):
+            positive = [e for e in event_name if not e.startswith("not ")]
+            negative = [e[4:] for e in event_name if e.startswith("not ")]
+            if positive:
+                for index, e in enumerate(positive):
+                    if "%" in e:
+                        join_element = " like '"
+                    else:
+                        join_element = " = '"
+                    line += column_name + join_element + e + "'"
+                    if index != len(positive) - 1:
+                        if isinstance(event_name, list):
+                            line += " or "
+                        elif isinstance(event_name, tuple):
+                            line += " and "
+
+            if positive and negative:
+                line += ' and '
+            if negative:
+                for index, e in enumerate(negative):
+                    if "%" in e:
+                        join_element = " not like '"
+                    else:
+                        join_element = " != '"
+                    line += column_name + join_element + e + "'"
+                    if index != len(negative) - 1:
+                        if isinstance(event_name, list):
+                            line += " or "
+                        elif isinstance(event_name, tuple):
+                            line += " and "
+
+        line += ")"
+        return line
+
     def add_users_list(self, users_list):
         """
         Добавление списка установок
@@ -255,7 +280,7 @@ class QueryHandler():
         :return:
         """
         if users_list:
-            #user_id1_list = [install[self.user_id1] for install in users_list]
+            # user_id1_list = [install[self.user_id1] for install in users_list]
             user_id2_list = [install[self.user_id2] for install in users_list]
 
             #     self.users_row = """
@@ -292,4 +317,5 @@ class QueryHandler():
         query = "".join([self.result, self.users_row, self.order_row])
         file = open("sql " + OS.get_os_string(self.os) + " " + self.database + ".txt", "w")
         file.write(query)
+        file.close()
         return query

@@ -82,13 +82,14 @@ class Report(Singleton):
         cls.current_app_version = None
         cls.event_data = None
         cls.user_status_check = False
+
     @classmethod
     def pr(cls):
         print("Полный fetch:")
         for index, t in enumerate(cls.time_1):
             if index < 100:
                 print('{0:.8f}'.format(t), end=", ")
-        cls.time_1=[]
+        cls.time_1 = []
         print("\nСлед событие:")
         for index, t in enumerate(cls.time_2):
             if index < 100:
@@ -124,26 +125,26 @@ class Report(Singleton):
         В случае, когда события закончатся, база данных отключается
         :return: True - Событие обработано, получен игрок и событие, None - события закончились
         '''
-        #time1 = time.perf_counter()
+        # time1 = time.perf_counter()
         event = None
         while not event:
-            #time2 = time.perf_counter()
+            # time2 = time.perf_counter()
             # Попытка достать из потока базы событие
             cls.event_data = MySQLHandler.fetch_next_event()
-            #cls.time_2.append(time.perf_counter() - time2)
+            # cls.time_2.append(time.perf_counter() - time2)
             # если больше нет событий, останавливаем цикл в отчёте
             if not cls.event_data:
                 for log in cls.not_found:
                     print(log)
-                #cls.pr()
+                # cls.pr()
                 Singleton.tearDown(cls)
                 return None
 
             event = None
             # пытаемся получить игрока из события
-            #time3 = time.perf_counter()
+            # time3 = time.perf_counter()
             got_user = cls._get_next_user()
-            #cls.time_3.append(time.perf_counter() - time3)
+            # cls.time_3.append(time.perf_counter() - time3)
             # если с ним нет проблем (прошел все проверки)
 
             if got_user:
@@ -154,13 +155,13 @@ class Report(Singleton):
                 if cls.current_event:
                     cls.previous_event = cls.current_event
 
-                #time5 = time.perf_counter()
+                # time5 = time.perf_counter()
                 # парсим событие
                 event = cls.Parser.parse_event(event_name=cls.event_data["event_name"],
                                                event_json=cls.event_data["event_json"],
                                                datetime=cls.event_data["event_datetime"])
                 cls.current_event = event
-                #cls.time_5.append(time.perf_counter() - time5)
+                # cls.time_5.append(time.perf_counter() - time5)
                 # если нужно, обновляем статус игрока
                 if cls.user_status_check:
                     cls.current_user.user_status_update(cls.current_event, cls.previous_event)
@@ -172,7 +173,7 @@ class Report(Singleton):
             # если все хорошо, и мы получили текущего игрока и событие, они передадутся в отчёт
             # в противном случае возьмем следующее событие по циклу
             if got_user and event:
-                #cls.time_1.append(time.perf_counter() - time1)
+                # cls.time_1.append(time.perf_counter() - time1)
                 return True
 
     @classmethod
@@ -190,11 +191,13 @@ class Report(Singleton):
         user_id2 = cls.event_data[OS.get_id(cls.os)]
         # проверка на тестеров
         if {user_id1, user_id2} & cls.user_skip_list:
+            #cls.not_found.add("Report/get_next_user error: tester "+user_id1+" "+user_id2)
             return None
 
         # если пользователь отличается от предыдущего
         if cls.is_new_user(next_id1=user_id1, next_id2=user_id2):
-            #time4 = time.perf_counter()
+
+            # time4 = time.perf_counter()
             new_user = cls.User(id_1=user_id1, id_2=user_id2)
 
             # если он прошел проверки на версию установленного приложения и на тестера, то становится
@@ -216,7 +219,8 @@ class Report(Singleton):
                 # new_user.country = cls.event_data[
                 #     "country_iso_code"] if "country_iso_code" in cls.event_data.keys() else "unknown"
                 new_user.installed_app_version = cls.event_data["app_version_name"]
-                new_user.country = cls.event_data["country_iso_code"] if "country_iso_code" in cls.event_data else "unknown"
+                new_user.country = cls.event_data[
+                    "country_iso_code"] if "country_iso_code" in cls.event_data else "unknown"
                 if new_user.country == "":
                     new_user.country = "unknown"
 
@@ -224,7 +228,7 @@ class Report(Singleton):
 
             cls.current_user = new_user
             cls.total_users += 1
-            #cls.time_4.append(time.perf_counter() - time4)
+            # cls.time_4.append(time.perf_counter() - time4)
         else:
             # проверка первой сессии
             if cls.current_user \
@@ -368,10 +372,11 @@ class Report(Singleton):
         :param user_id2: device_id
         :return: (дата установки, паблишер, трекер)
         """
-        if user_id1 in MySQLHandler.installs_dict_aid:
-            install=MySQLHandler.installs_dict_aid[user_id1]
-        elif user_id2 in MySQLHandler.installs_dict_aid:
-            install=MySQLHandler.installs_dict_id[user_id2]
+
+        if user_id1!="" and user_id1 in MySQLHandler.installs_dict_aid:
+            install = MySQLHandler.installs_dict_aid[user_id1]
+        elif user_id2!="" and user_id2 in MySQLHandler.installs_dict_id:
+            install = MySQLHandler.installs_dict_id[user_id2]
         else:
             print(user_id1, "/", user_id2, "install not found")
             if user_id1:
@@ -381,15 +386,14 @@ class Report(Singleton):
             return None, None, None, None, "unknown"
 
         publisher_name = install["publisher_name"] if install["publisher_name"] != "" else "Organic"
-        tracker_name = install["tracker_name"] if install["tracker_name"] not in ("", "unknown") else OS.get_source(cls.os)
+        tracker_name = install["tracker_name"] if install["tracker_name"] not in ("", "unknown") else OS.get_source(
+            cls.os)
         country = install["country_iso_code"] if install["country_iso_code"] else "unknown"
         return install["install_datetime"].date(), \
                publisher_name, \
                tracker_name, \
                install["app_version_name"], \
                country
-
-
 
     @classmethod
     def get_timediff(cls, datetime_1=None, datetime_2=None, measure="min"):
