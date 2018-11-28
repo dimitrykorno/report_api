@@ -40,11 +40,12 @@ def time_medium(fn):
     def wrapped(*args, **kwargs):
         start_time = time.perf_counter()
         result = fn(*args, **kwargs)
-        Event.medium_time.append(round(float(time.perf_counter() - start_time),8))
+        Event.medium_time.append(round(float(time.perf_counter() - start_time), 8))
 
         return result
 
     return wrapped
+
 
 def time_medium_2(fn):
     """
@@ -57,41 +58,43 @@ def time_medium_2(fn):
     def wrapped(*args, **kwargs):
         start_time = time.perf_counter()
         result = fn(*args, **kwargs)
-        Event.medium_time_2.append(round(float(time.perf_counter() - start_time),8))
+        Event.medium_time_2.append(round(float(time.perf_counter() - start_time), 8))
 
         return result
 
     return wrapped
+
 
 def get_medium_time():
     '''
     Получение результата расчетов среднего времени выполнения функции
     :return:
     '''
-    for index,t in enumerate(Event.medium_time):
-        if index<100:
-            print('{0:.8f}'.format(t),end=", ")
+    for index, t in enumerate(Event.medium_time):
+        if index < 100:
+            print('{0:.8f}'.format(t), end=", ")
     print("")
-    first=0
+    first = 0
 
     if len(Event.medium_time) > 0:
-        first= sum(Event.medium_time) / len(Event.medium_time)
+        first = sum(Event.medium_time) / len(Event.medium_time)
     return first
+
 
 def get_medium_time_2():
     '''
     Получение результата расчетов среднего времени выполнения функции
     :return:
     '''
-    #print(Event.medium_time_2)
-    for index,t in enumerate(Event.medium_time_2):
-        if index<100:
-            print('{0:.8f}'.format(t),end=", ")
+    # print(Event.medium_time_2)
+    for index, t in enumerate(Event.medium_time_2):
+        if index < 100:
+            print('{0:.8f}'.format(t), end=", ")
     print("")
-    second=0
+    second = 0
 
     if len(Event.medium_time_2) > 0:
-        second= sum(Event.medium_time_2[1:]) / (len(Event.medium_time_2)-1)
+        second = sum(Event.medium_time_2[1:]) / (len(Event.medium_time_2) - 1)
     return second
 
 
@@ -104,11 +107,11 @@ def get_timediff(datetime_1=None, datetime_2=None, measure="min"):
     :return: разница во времени, по умолчанию - между текущим и предыдущим событием
     '''
 
-    if measure in ("min","m"):
+    if measure in ("min", "m"):
         return abs(datetime_1.timestamp() - datetime_2.timestamp()) / 60
-    elif measure in ("sec","s"):
+    elif measure in ("sec", "s"):
         return abs(datetime_1.timestamp() - datetime_2.timestamp())
-    elif measure in ("day","d"):
+    elif measure in ("day", "d"):
         if not type(datetime_1) is datetime.date:
             datetime_1 = datetime_1.date()
         if not type(datetime_2) is datetime.date:
@@ -116,6 +119,16 @@ def get_timediff(datetime_1=None, datetime_2=None, measure="min"):
         return abs(datetime_1 - datetime_2).days
     else:
         print("Неверный промежуток времени")
+
+
+def try_save_writer(wr, filename):
+    while True:
+        try:
+            wr.save()
+            break
+        except PermissionError:
+            print("!!! CLOSE FILE !!!", filename)
+            time.sleep(2)
 
 
 def sigma(raw_data, normal=False):
@@ -199,9 +212,8 @@ def outliers_iqr(data_list, where=None, max_outliers=True, min_outliers=False, m
                 excluded = list(x for x in data_list if x <= q1 - iqr)
 
         if print_excl and excluded and len(excluded) > 0:
-            print("Выбросы в:", where)
-            print("изначально:", data_list)
-            print("исключили:", excluded, "Q1:", q1, "Q3:", q3, str(multiplier) + "*IQR", iqr)
+            print(where, "изначально:", data_list)
+            print(where, "исключили:", excluded, "Q1:", q1, "Q3:", q3, str(multiplier) + "*IQR", iqr)
 
     return data_without_outliers
 
@@ -212,9 +224,10 @@ test_devices_android = {
     "e827bd22-9608-4d74-b6d3-88462e5306a4", "a7061aeb-89b4-4223-b7dc-d9ced7e4f31b",
     "a25ee26d-bdfc-4b0c-aaaf-d6962f9c0f6d", "49f53d94-6609-4b2a-9b91-d9d9a37f3494",
     "4edf535e-2741-4b74-a7aa-f3014d2e6d67", "11cb8c43-6647-4aa9-903c-32297af8ff5e",
-    "50d21e9d-da82-403f-92ff-4c4bad4e7161",
-    "2383cd9a-3575-4d3b-9d40-cb92add470d8", "632bc0d9-f62d-40bb-96b2-4c0bb26949f0",
-    "50d21e9d-da82-403f-92ff-4c4bad4e7161"
+    "50d21e9d-da82-403f-92ff-4c4bad4e7161", "f357c7e2-33f2-46dc-bd94-a0a9d9b09501"
+                                            "2383cd9a-3575-4d3b-9d40-cb92add470d8",
+    "632bc0d9-f62d-40bb-96b2-4c0bb26949f0",
+    "50d21e9d-da82-403f-92ff-4c4bad4e7161", "4a21a9ef-ddeb-4b66-8c27-5c5729894e94"
 }
 test_devices_ios = {
     "68653B88-C937-479D-8548-C3020DDEB3C2", "FB5A77D5-5067-4E16-9830-65492BA81174",
@@ -223,31 +236,33 @@ test_devices_ios = {
     "AE03F39E-F442-4F3B-BAE2-954D028099C5", "E7C12811-08FF-4A9E-83D5-44EE98B4F530",
     "51794505-B791-4BE9-B6AA-B4E718A69847", "DC416F15-B602-44E5-9AC3-B34D60284F0B",
     "00AB8828-4167-44C6-AEAC-A46558ECEBB1", "E9073059-D0A1-44F8-B206-72AE0D366381",
-    "A322DE92-758A-4503-93D6-C2C58CF1B6A7", "7B633152-0E9F-478F-93DB-F5301D9BE271",
-    "6AA563C5-65E0-416C-AC48-EBD79AB20D69", "A322DE92-758A-4503-93D6-C2C58CF1B6A7",
-    "722870FC-3EC0-4690-8B22-C6ACC1BA6304", "25EAF46B-09D2-4BF0-8F92-3F7CC1E2435D",
-    "47ADA9C1-DADD-4115-A332-52F3291FBD76",
-    "2AB947E4-B36A-44DA-9666-8456D11DF47B",
-    "07632979-F475-43D2-B006-7D17DCDEBCCF",
-    "E66C4F64-5CEE-40C6-9A04-FA512D3B6FF3",
-    "2FA9246C-1CEB-4904-872D-F5B07371A571",
-    "CEB10F0B-57AE-4399-8B1F-19D1519380EC",
-    "9B74F004-3894-4E23-8A89-7CEEE20753C1",
+    "282AC74C-EE9E-418E-959D-423025E5A97D", "2AB947E4-B36A-44DA-9666-8456D11DF47B",
+    "6AA563C5-65E0-416C-AC48-EBD79AB20D69", "2FA9246C-1CEB-4904-872D-F5B07371A571",
     "AD64F7A4-30CF-4C89-A33C-65AABE3D1061",
+    # "A322DE92-758A-4503-93D6-C2C58CF1B6A7", "7B633152-0E9F-478F-93DB-F5301D9BE271",
+    # "A322DE92-758A-4503-93D6-C2C58CF1B6A7",
+    # "722870FC-3EC0-4690-8B22-C6ACC1BA6304", "25EAF46B-09D2-4BF0-8F92-3F7CC1E2435D",
+    # "47ADA9C1-DADD-4115-A332-52F3291FBD76",
+
+    # "07632979-F475-43D2-B006-7D17DCDEBCCF",
+    # "E66C4F64-5CEE-40C6-9A04-FA512D3B6FF3",
+
+    # "CEB10F0B-57AE-4399-8B1F-19D1519380EC",
+    # "9B74F004-3894-4E23-8A89-7CEEE20753C1",
+
 
     "B4AB781D-654D-4AEB-AAE9-2F4ABF1BC92B",
-    "DCE5132A-7691-4C96-ABD3-5E5A3308898B",
-    # омск,ipad mini4 куча покупок
-    "4B63E67D-BB82-4097-AE0A-D0136EBF8292",
+    # "DCE5132A-7691-4C96-ABD3-5E5A3308898B",
+    # # # омск,ipad mini4 куча покупок
+    # # "4B63E67D-BB82-4097-AE0A-D0136EBF8292",
     # москва se куча покупок
     "AD249847-3E4A-41FA-A764-2CF7BFAC1D8C",
-    # временно, пока не решу, что делать с людьми, меняющими девайсы и ifa
-    "1E629546-A1E1-4B25-88DE-0AA4060F8509",
-    "44D40C4B-77C4-4CB0-8B9C-CE846D2C7BE1",
-    "60282134-AF9B-4BF5-A53A-BE84FE6CFD08",
-    "E6F740F0-3E52-4A9B-9350-32257BCA2FD1",
-    "42794211-5143-40C0-A126-4A0232F87C9E",
-    "538EBE9B-A792-414A-83EE-9AC11A737B09"
+    # # # временно, пока не решу, что делать с людьми, меняющими девайсы и ifa
+    # # "1E629546-A1E1-4B25-88DE-0AA4060F8509",
+    # # "44D40C4B-77C4-4CB0-8B9C-CE846D2C7BE1",
+    # # "60282134-AF9B-4BF5-A53A-BE84FE6CFD08",
+    # # "E6F740F0-3E52-4A9B-9350-32257BCA2FD1",
+    # # "42794211-5143-40C0-A126-4A0232F87C9E"
 
 }
 
@@ -281,8 +296,13 @@ def week_of_month(dt):
     return int(math.ceil(adjusted_dom / 7.0))
 
 
-def draw_plot(x, y_dict, xtick_steps=1, xticks_move=0, x_ticks_labels=list(), title=None, folder="", show=False,
-              format="png"):
+def draw_plot(x, y_dict,
+              xtick_steps=1, xticks_move=0, x_ticks_labels=list(),
+              title=None, folder="", format="png",
+              plot_type="plot", colors=None,
+              show=False,
+              additional_labels=[],
+              size=(1, 1)):
     """
     рисование графика, расситано на одновременное рисование множества графиков из словаря
     :param x: иксы
@@ -296,53 +316,139 @@ def draw_plot(x, y_dict, xtick_steps=1, xticks_move=0, x_ticks_labels=list(), ti
     :param format: формат сохранения картинки
     :return:
     """
-    plt.figure(figsize=(17, 8))
-    ax = plt.subplot(111)
-    # Цвета
-    hsv = plt.get_cmap('hsv')
-    colors = hsv(np.linspace(0, 0.9, len(y_dict.keys())))
-    # Линии
-    linestyles = ['-']
-    if len(y_dict.keys()) > 15:
-        linestyles += ['-.']
-    elif len(y_dict.keys()) > 25:
-        linestyles += ['--']
-    elif len(y_dict.keys()) > 35:
-        linestyles += [':']
-    current_linestyle = 0
+    screens = 1
+    rows = size[0]
+    columns = size[1]
 
-    # Рисование
-    for y_key, color in zip(y_dict.keys(), colors):
-        y_values = y_dict[y_key]
-        ax.plot(x, y_values,
-                label=str(y_key) + " " + str(sum(y_values)),
-                color=color,
-                linestyle=linestyles[current_linestyle])
+    # рисование графика на данном сабплоте
+    def draw(ax, x_par, y_par, colors=colors,plot_num=1 ):
+        # Цвета
+        hsv = plt.get_cmap('hsv')
+        if not colors:
+            colors = hsv(np.linspace(0, 0.9, len(y_par)))
+        # Линии
+        linestyles = ['-']
+        if len(y_par) > 15:
+            linestyles += ['-.']
+        elif len(y_par) > 25:
+            linestyles += ['--']
+        elif len(y_par) > 35:
+            linestyles += [':']
+        current_linestyle = 0
 
-        # Тики и Лейблы
-        ax.set_xticks(list(range(min(x), max(x) + 1, xtick_steps)))
-        if xticks_move != 0:
-            ax.set_xticklabels(list(range(min(x) + xticks_move, max(x) + 1 + xticks_move, xtick_steps)))
-        elif x_ticks_labels:
-            ax.set_xticklabels(x_ticks_labels[::xtick_steps])
-        # Наклон лейблов
-        if xtick_steps <= 5 and (x_ticks_labels and max([len(str(x)) for x in x_ticks_labels]) > 4):
-            for tick in ax.get_xticklabels():
-                tick.set_rotation(45)
-        # Выбор линии
-        current_linestyle = (current_linestyle + 1) % len(linestyles)
+        # Рисование
+        plot_num = 0
+        screens=1
+        #for y_key, color in zip(y_par, colors):
+        for y_key in y_par:
+            y_values = y_par[y_key]
+            try:
+                label=additional_labels[y_key]
+            except:
+                label=y_key
+            if type(y_values[0]) is list:
+                if len(additional_labels[y_key])<len(y_values[0]):
+                    label = y_key
+                print(len(y_values[0]))
+                print("k2",y_key)
+                plot_num+=1
+                ax = plt.subplot(rows, columns, plot_num)
+
+                for i in range(len(y_values[0])):
+                    print("i",i)
+                    ax.bar([x+i/(len(y_values[0])+1) for x in x_par], [y[i] for y in y_values],
+                           width=1/(len(y_values[0])+1),
+                           label=str(label[i]) + " " + str(sum([y[i] for y in y_values])),
+                           color=colors[i],
+                           linestyle=linestyles[current_linestyle]
+                           )
+                    ax.set_title(y_key)
+                    ax.set_xticks(list(range(min(x_par), max(x_par) + 1, xtick_steps)))
+                    if xticks_move != 0:
+                        ax.set_xticklabels(
+                            list(range(min(x_par) + xticks_move, max(x_par) + 1 + xticks_move, xtick_steps)))
+                    elif x_ticks_labels:
+                        ax.set_xticklabels(x_ticks_labels[::xtick_steps])
+                    # Наклон лейблов
+                    if xtick_steps <= 5 and (x_ticks_labels and max([len(str(t)) for t in x_ticks_labels]) > 4):
+                        for tick in ax.get_xticklabels():
+                            tick.set_rotation(45)
+                    # Выбор линии
+                    current_linestyle = (current_linestyle + 1) % len(linestyles)
+                    #ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True,ncol=5)
+                    ax.legend()
+                if plot_num == rows * columns:
+                    print("new screen", screens + 1, rows, columns, plot_num, index, len(y_dict))
+                    t = title
+                    if screens > 1:
+                        t += "_" + str(screens)
+                    save(plt, t)
+                    plot_num = 0
+                    screens += 1
+                    plt.figure(figsize=(24, 8))
+            else:
+                if plot_type=="bar":
+                    ax.bar(x_par, y_values,
+                            label=str(label) + " " + str(sum(y_values)),
+                            color=color,
+                            linestyle=linestyles[current_linestyle])
+                else:
+                    if plot_type!="plot":
+                        print("Unknown plot type:",plot_type)
+                    ax.plot(x_par, y_values,
+                            label=str(label) + " " + str(sum(y_values)),
+                            color=color,
+                            linestyle=linestyles[current_linestyle])
+
+            # Тики и Лейблы
+
+
 
     # Оформление и сохранение
-    if not title:
-        title = str(list(y_dict.keys()))
-    plt.title(title)
-    legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True,
-                       ncol=5)
-    plt.savefig(folder + title + "." + format, bbox_extra_artists=(legend,), bbox_inches='tight')
-    if show:
-        plt.show()
-    plt.close()
+    def save(ax, t=title):
+        if not t:
+            t = str(list(y_dict.keys()))
+        #plt.title(t)
+        # legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True,
+        #                    ncol=5)
+        plt.savefig(folder + t + "." + format,
+                    #bbox_extra_artists=(ax.legend,),
+                    bbox_inches='tight')
+        if show:
+            plt.show()
 
+    # y_dict = {day_1 : {app_vers_1: y, app_vers_2 :y}, day_2 : {app_vers_1: y, app_vers_2 :y} )
+    # на каждом экране по 2+графика
+    # y_dict = {app_vers_1: y, app_vers_2 :y}
+    # на каждом экране по 1 графику
+    subplots_mode = False
+    for k1 in y_dict:
+        if type(y_dict[k1]) is dict:
+            subplots_mode = True
+            break
+
+    if not subplots_mode:
+        plt.figure(figsize=(17, 8))
+        sub_p = plt.subplot(111)
+        draw(sub_p, x, y_dict)
+        save(sub_p, title)
+    else:
+        plot_num = 0
+        plt.figure(figsize=(24, 8))
+        for index,k in enumerate(y_dict):
+            print("k1", k,y_dict[k])
+
+            plot_num += 1
+            draw(plt, x, y_dict[k],colors,plot_num)
+            # if plot_num == rows * columns or index+1==len(y_dict):
+            #     print("new screen",screens+1,rows,columns,plot_num,index,len(y_dict))
+            #     t = title
+            #     if screens > 1:
+            #         t += "_" + str(screens)
+            #     save(plt, t)
+            #     plot_num = 0
+            #     screens += 1
+            #     plt.figure(figsize=(17, 8))
 
 def log_approximation(x, y):
     """
