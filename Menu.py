@@ -67,9 +67,9 @@ def _get_settings(f):
         if types[int(input_args)] is int:
             new_value = int(new_value)
         elif types[int(input_args)] is bool:
-            if new_value in ("True", "true", 1):
+            if str(new_value).lower() in ("true",  "1"):
                 new_value = True
-            elif new_value in ("False", "false", 0):
+            elif str(new_value).lower() in ("false", "0"):
                 new_value = False
         elif types[int(input_args)] is list:
             new_value = new_value.replace(" ", "").split(",")
