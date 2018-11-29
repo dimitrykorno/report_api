@@ -296,13 +296,115 @@ def week_of_month(dt):
     return int(math.ceil(adjusted_dom / 7.0))
 
 
-def draw_plot(x, y_dict,
+def draw_plot(x_par, y_dict,
               xtick_steps=1, xticks_move=0, x_ticks_labels=list(),
               title=None, folder="", format="png",
               plot_type="plot", colors=None,
               show=False,
-              additional_labels=[],
-              size=(1, 1)):
+              additional_labels=[]):
+    """
+    рисование графика, расситано на одновременное рисование множества графиков из словаря
+    :param x_par: иксы
+    :param y_dict: словарь y-ков
+    :param xtick_steps: шаги иксов
+    :param xticks_move: смещение иксов
+    :param x_ticks_labels: лейблы иксов
+    :param title: название графика
+    :param folder: папка с графиком
+    :param show: печать графика
+    :param format: формат сохранения картинки
+    :return:
+    """
+
+    # Цвета
+    hsv = plt.get_cmap('hsv')
+    if not colors:
+        colors = list(hsv(np.linspace(0, 0.9, len(y_dict))))
+    else:
+        colors = colors + list(hsv(np.linspace(0, 0.9, min(0, len(y_dict) - len(colors)))))
+    # Линии
+    linestyles = ['-']
+    if len(y_dict) > 15:
+        linestyles += ['-.']
+    elif len(y_dict) > 25:
+        linestyles += ['--']
+    elif len(y_dict) > 35:
+        linestyles += [':']
+    current_linestyle = 0
+
+    # Рисование графика
+    plt.figure(figsize=(17, 8))
+    ax = plt.subplot(111)
+    for index, y_key in enumerate(y_dict):
+        y_values = y_dict[y_key]
+        try:
+            label = additional_labels
+        except:
+            label = y_key
+        if type(y_values[0]) is list:
+            if plot_type == "bar":
+                for i in range(len(y_values[0])):
+                    ax.bar([x + i / (len(y_values[0]) + 1) for x in x_par], [y[i] for y in y_values],
+                           width=1 / (len(y_values[0]) + 1),
+                           label=str(label[i]) + " " + str(sum([y[i] for y in y_values])),
+                           color=colors[i],
+                           linestyle=linestyles[current_linestyle]
+                           )
+            else:
+                if plot_type != "plot":
+                    print("Unknown plot type:", plot_type)
+                for i in range(len(y_values[0])):
+                    ax.plot(x_par, [y[i] for y in y_values],
+                            label=str(label[i]) + " " + str(sum([y[i] for y in y_values])),
+                            color=colors[i],
+                            linestyle=linestyles[current_linestyle]
+                            )
+        else:
+            if plot_type == "bar":
+                ax.bar(x_par, y_values,
+                       label=str(label) + " " + str(sum(y_values)),
+                       color=colors[index],
+                       linestyle=linestyles[current_linestyle])
+            else:
+                if plot_type != "plot":
+                    print("Unknown plot type:", plot_type)
+                ax.plot(x_par, y_values,
+                        label=str(label) + " " + str(sum(y_values)),
+                        color=colors[index],
+                        linestyle=linestyles[current_linestyle])
+        # Выбор линии
+        current_linestyle = (current_linestyle + 1) % len(linestyles)
+
+    # Тики и Лейблы
+    ax.set_title([key for key in y_dict])
+    ax.set_xticks(list(range(min(x_par), max(x_par) + 1, xtick_steps)))
+    if xticks_move != 0:
+        ax.set_xticklabels(
+            list(range(min(x_par) + xticks_move, max(x_par) + 1 + xticks_move, xtick_steps)))
+    elif x_ticks_labels:
+        ax.set_xticklabels(x_ticks_labels[::xtick_steps])
+    # Наклон лейблов
+    if xtick_steps <= 5 and (x_ticks_labels and max([len(str(t)) for t in x_ticks_labels]) > 4):
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(45)
+
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True, ncol=5)
+    if not title:
+        title = str(list(y_dict.keys()))
+    plt.savefig(folder + title + "." + format,
+                bbox_extra_artists=(ax.legend,),
+                bbox_inches='tight')
+    if show:
+        plt.show()
+
+
+def draw_subplot(x_par, y_dict,
+                 xtick_steps=1, xticks_move=0, x_ticks_labels=list(),
+                 title=None, folder="", format="png",
+                 plot_type="plot", colors=None,
+                 show=False,
+                 additional_labels=[],
+                 size=(1, 1)):
     """
     рисование графика, расситано на одновременное рисование множества графиков из словаря
     :param x: иксы
@@ -316,139 +418,107 @@ def draw_plot(x, y_dict,
     :param format: формат сохранения картинки
     :return:
     """
-    screens = 1
+
+    # Строки и столбцы
     rows = size[0]
     columns = size[1]
 
-    # рисование графика на данном сабплоте
-    def draw(ax, x_par, y_par, colors=colors,plot_num=1 ):
-        # Цвета
-        hsv = plt.get_cmap('hsv')
-        if not colors:
-            colors = hsv(np.linspace(0, 0.9, len(y_par)))
-        # Линии
-        linestyles = ['-']
-        if len(y_par) > 15:
-            linestyles += ['-.']
-        elif len(y_par) > 25:
-            linestyles += ['--']
-        elif len(y_par) > 35:
-            linestyles += [':']
-        current_linestyle = 0
+    # Цвета
+    hsv = plt.get_cmap('hsv')
+    if not colors:
+        colors = list(hsv(np.linspace(0, 0.9, len(y_dict))))
+    else:
+        colors = colors + list(hsv(np.linspace(0, 0.9, min(0, len(y_dict) - len(colors)))))
 
-        # Рисование
-        plot_num = 0
-        screens=1
-        #for y_key, color in zip(y_par, colors):
-        for y_key in y_par:
-            y_values = y_par[y_key]
-            try:
-                label=additional_labels[y_key]
-            except:
-                label=y_key
-            if type(y_values[0]) is list:
-                if len(additional_labels[y_key])<len(y_values[0]):
-                    label = y_key
-                print(len(y_values[0]))
-                print("k2",y_key)
-                plot_num+=1
-                ax = plt.subplot(rows, columns, plot_num)
+    # Линии
+    linestyles = ['-']
+    if len(y_dict) > 15:
+        linestyles += ['-.']
+    elif len(y_dict) > 25:
+        linestyles += ['--']
+    elif len(y_dict) > 35:
+        linestyles += [':']
+    current_linestyle = 0
 
+    # Рисование графика
+    plt.figure(figsize=(17, 8))
+    ax = plt.subplot(1, 1, 1)
+    plot_num = 0
+    for index, y_key in enumerate(y_dict):
+        plot_num += 1
+        # Новый экран
+        if index!=0 and plot_num % (rows * columns):
+            plot_num = 1
+            if not title:
+                title = str(list(y_dict.keys()))
+            plt.savefig(folder + title + "." + format)
+            if show:
+                plt.show()
+            plt.figure(figsize=(17, 8))
+
+        ax = plt.subplot(rows, columns, plot_num)
+        y_values = y_dict[y_key]
+
+        if type(y_values[0]) is list:
+            if len(additional_labels) != len(y_values[0]):
+                label = additional_labels + ["unknown"] * (min(0, len(y_values[0]) - len(additional_labels)))
+            else:
+                label = additional_labels
+            if plot_type == "bar":
                 for i in range(len(y_values[0])):
-                    print("i",i)
-                    ax.bar([x+i/(len(y_values[0])+1) for x in x_par], [y[i] for y in y_values],
-                           width=1/(len(y_values[0])+1),
+                    ax.bar([x + i / (len(y_values[0]) + 1) for x in x_par], [y[i] for y in y_values],
+                           width=1 / (len(y_values[0]) + 1),
                            label=str(label[i]) + " " + str(sum([y[i] for y in y_values])),
                            color=colors[i],
                            linestyle=linestyles[current_linestyle]
                            )
-                    ax.set_title(y_key)
-                    ax.set_xticks(list(range(min(x_par), max(x_par) + 1, xtick_steps)))
-                    if xticks_move != 0:
-                        ax.set_xticklabels(
-                            list(range(min(x_par) + xticks_move, max(x_par) + 1 + xticks_move, xtick_steps)))
-                    elif x_ticks_labels:
-                        ax.set_xticklabels(x_ticks_labels[::xtick_steps])
-                    # Наклон лейблов
-                    if xtick_steps <= 5 and (x_ticks_labels and max([len(str(t)) for t in x_ticks_labels]) > 4):
-                        for tick in ax.get_xticklabels():
-                            tick.set_rotation(45)
-                    # Выбор линии
-                    current_linestyle = (current_linestyle + 1) % len(linestyles)
-                    #ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True,ncol=5)
-                    ax.legend()
-                if plot_num == rows * columns:
-                    print("new screen", screens + 1, rows, columns, plot_num, index, len(y_dict))
-                    t = title
-                    if screens > 1:
-                        t += "_" + str(screens)
-                    save(plt, t)
-                    plot_num = 0
-                    screens += 1
-                    plt.figure(figsize=(24, 8))
             else:
-                if plot_type=="bar":
-                    ax.bar(x_par, y_values,
-                            label=str(label) + " " + str(sum(y_values)),
-                            color=color,
-                            linestyle=linestyles[current_linestyle])
-                else:
-                    if plot_type!="plot":
-                        print("Unknown plot type:",plot_type)
-                    ax.plot(x_par, y_values,
-                            label=str(label) + " " + str(sum(y_values)),
-                            color=color,
-                            linestyle=linestyles[current_linestyle])
+                if plot_type != "plot":
+                    print("Unknown plot type:", plot_type)
+                for i in range(len(y_values[0])):
+                    ax.plot(x_par, [y[i] for y in y_values],
+                            label=str(label[i]) + " " + str(sum([y[i] for y in y_values])),
+                            color=colors[i],
+                            linestyle=linestyles[current_linestyle]
+                            )
+        else:
+            if additional_labels:
+                label = additional_labels[0] if type(additional_labels) is list else additional_labels
+            else:
+                label = y_key
+            if plot_type == "bar":
+                ax.bar(x_par, y_values,
+                       label=str(label) + " " + str(sum(y_values)),
+                       color=colors[index],
+                       linestyle=linestyles[current_linestyle])
+            else:
+                if plot_type != "plot":
+                    print("Unknown plot type:", plot_type)
+                ax.plot(x_par, y_values,
+                        label=str(label) + " " + str(sum(y_values)),
+                        color=colors[index],
+                        linestyle=linestyles[current_linestyle])
+        # Выбор линии
+        current_linestyle = (current_linestyle + 1) % len(linestyles)
+        # Тики и Лейблы
+        ax.set_title(y_key)
+        ax.set_xticks(list(range(min(x_par), max(x_par) + 1, xtick_steps)))
+        if xticks_move != 0:
+            ax.set_xticklabels(
+                list(range(min(x_par) + xticks_move, max(x_par) + 1 + xticks_move, xtick_steps)))
+        elif x_ticks_labels:
+            ax.set_xticklabels(x_ticks_labels[::xtick_steps])
+        # Наклон лейблов
+        if xtick_steps <= 5 and (x_ticks_labels and max([len(str(t)) for t in x_ticks_labels]) > 4):
+            for tick in ax.get_xticklabels():
+                tick.set_rotation(45)
+        ax.legend()
 
-            # Тики и Лейблы
-
-
-
-    # Оформление и сохранение
-    def save(ax, t=title):
-        if not t:
-            t = str(list(y_dict.keys()))
-        #plt.title(t)
-        # legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True,
-        #                    ncol=5)
-        plt.savefig(folder + t + "." + format,
-                    #bbox_extra_artists=(ax.legend,),
-                    bbox_inches='tight')
-        if show:
-            plt.show()
-
-    # y_dict = {day_1 : {app_vers_1: y, app_vers_2 :y}, day_2 : {app_vers_1: y, app_vers_2 :y} )
-    # на каждом экране по 2+графика
-    # y_dict = {app_vers_1: y, app_vers_2 :y}
-    # на каждом экране по 1 графику
-    subplots_mode = False
-    for k1 in y_dict:
-        if type(y_dict[k1]) is dict:
-            subplots_mode = True
-            break
-
-    if not subplots_mode:
-        plt.figure(figsize=(17, 8))
-        sub_p = plt.subplot(111)
-        draw(sub_p, x, y_dict)
-        save(sub_p, title)
-    else:
-        plot_num = 0
-        plt.figure(figsize=(24, 8))
-        for index,k in enumerate(y_dict):
-            print("k1", k,y_dict[k])
-
-            plot_num += 1
-            draw(plt, x, y_dict[k],colors,plot_num)
-            # if plot_num == rows * columns or index+1==len(y_dict):
-            #     print("new screen",screens+1,rows,columns,plot_num,index,len(y_dict))
-            #     t = title
-            #     if screens > 1:
-            #         t += "_" + str(screens)
-            #     save(plt, t)
-            #     plot_num = 0
-            #     screens += 1
-            #     plt.figure(figsize=(17, 8))
+    if not title:
+        title = str(list(y_dict.keys()))
+    plt.savefig(folder + title + "." + format)
+    if show:
+        plt.show()
 
 def log_approximation(x, y):
     """
