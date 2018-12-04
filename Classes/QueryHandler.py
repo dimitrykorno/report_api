@@ -178,14 +178,24 @@ class QueryHandler():
             country_iso_code in ('{}')
             """.format("','".join(countries_list))
 
+        events=QueryHandler.add_events_line(events_list)
+
+        for row in (min_app_version, max_app_version, datetime_period, countries, events):
+            if row != "":
+                self.where_row += row + """
+                """
+
+                # print(self.where_row)
+    @staticmethod
+    def add_events_line(events_list):
         # добавление списка событий event_name  и json
         events = ""
         for index, event in enumerate(events_list):
             if events == "":
                 events = """
-        and 
-        (
-                """
+                and 
+                (
+                        """
 
             event_names_list = []
             if event[0] != "":
@@ -209,18 +219,12 @@ class QueryHandler():
 
             if index != len(events_list) - 1:
                 events += """
-                or
-                """
+                        or
+                        """
         if events != "":
             events += """
-        )"""
-
-        for row in (min_app_version, max_app_version, datetime_period, countries, events):
-            if row != "":
-                self.where_row += row + """
-                """
-
-                # print(self.where_row)
+                )"""
+        return events
 
     # set - in (_,_,_ )
     # list _ or _or _ or _

@@ -1,4 +1,4 @@
-from Classes.Events import *
+from report_api.Classes.Events import *
 from report_api.Report import Report
 from datetime import datetime
 import pandas as pd

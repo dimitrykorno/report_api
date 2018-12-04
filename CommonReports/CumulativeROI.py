@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from operator import truediv
-import os
 from time import sleep
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,8 +7,8 @@ import pandas as pd
 from dateutil.rrule import rrule, DAILY
 from report_api.OS import OS
 from report_api.Report import Report
-from report_api.Utilities.Utils import time_count, log_approximation
-from Classes.Events import *
+from report_api.Utilities.Utils import time_count, log_approximation,check_folder
+from sop_analytics.Classes.Events import *
 
 
 # noinspection PyDefaultArgument,PyDefaultArgument
@@ -398,8 +397,8 @@ def new_report(parser=None,
                     ################### графики и доп метркии ##############################################################
 
                     # Рисуем графики
-                    if not os.path.exists(folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/"):
-                        os.makedirs(folder_dest + publisher + "/" + OS.get_os_string(os_obj) + "/")
+                    # Проверка наличия папки для данного паблишера и ОС
+                    check_folder(folder_dest,additional_folders=[publisher,OS.get_os_string(os_obj)])
                     Report.draw_plot(range(0, days_since_install + 1),
                                      {source + " ARPU": source_arpu_y},
                                      show=False,

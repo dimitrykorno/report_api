@@ -1,0 +1,86 @@
+from datetime import datetime
+import pandas as pd
+from report_api.Classes.QueryHandler import QueryHandler
+from report_api.Report import Report
+from report_api.Data import Data
+from report_api.Utilities.Utils import check_folder, draw_plot, try_save_writer
+from report_api.Classes.Events import *
+
+
+# noinspection PyDefaultArgument,PyDefaultArgument
+def new_report(app=None,
+               folder_dest=None,
+               events_list=[],
+               os_list=["iOS", "Android"],
+               period_start="2018-10-01",
+               period_end="2018-11-15",
+               min_version=None,
+               max_version=None,
+               countries_list=[]
+               ):
+    """
+    Расчет накопительного ARPU и ROI по паблишерам и трекинговым ссылкам(источникам)
+
+    :param os_list:
+    :param min_version:
+    :param max_version:
+    :param countries_list:
+    :param period_start: начало периода
+    :param period_end: конец периода
+    :param days_since_install: рассчитное кол-во дней после установки
+
+    :return:
+    """
+
+    if not period_start:
+        period_start = "2018-01-01"
+    # Приводим границы периода к виду datetime.date
+    if isinstance(period_start, str):
+        period_start = datetime.strptime(period_start, "%Y-%m-%d").date()
+    if period_end:
+        if isinstance(period_end, str):
+            period_end = datetime.strptime(period_end, "%Y-%m-%d").date()
+    else:
+        period_end = datetime.now().date()
+
+    title = " MAU " + str(period_start) + "-" + str(period_end)
+    # БАЗА ДАННЫХ
+    json_line = ""
+    if events_list:
+        json_line = QueryHandler.add_events_line(events_list)
+
+    app_version = ""
+    if min_version:
+        app_version += " and app_version_name > '{}' ".format(min_version)
+        title += " " + min_version
+    if max_version:
+        app_version += " and app_version_name < '{}' ".format(max_version)
+        title += "-" + max_version
+    countries=""
+    if countries_list:
+        countries=" and country_iso_code in ('"+"','".join(countries_list)+"')"
+        title+=" in "+str(countries_list)
+
+    for os_str in os_list:
+        title=os_str+title
+        sql = """
+            SELECT DATE_FORMAT(event_datetime,'%Y-%m') as month,COUNT(distinct ios_ifa) as users
+            from {0}_events.events_{1}
+            where event_datetime between '{2}' and '{3}' {4} {5} {6}
+            group by DATE_FORMAT(event_datetime,'%Y-%m')
+            order by DATE_FORMAT(event_datetime,'%Y-%m')
+            """.format(app, os_str.lower(), period_start, period_end, json_line, app_version, countries)
+        print(sql)
+        result, db = Data.get_data(sql, app, by_row=False, name="Рассчет MAU.")
+        db.close()
+        x = [r["month"] for r in result]
+        y = [r["users"] for r in result]
+        check_folder(folder_dest)
+
+        draw_plot(range(len(x)), {"MAU": y},  x_ticks_labels=x, show=True, folder=folder_dest,
+                  title=title, calculate_sum=False)
+        df = pd.DataFrame(index=x, columns=["users"])
+        df["users"] = y
+        writer = pd.ExcelWriter(folder_dest + title + ".xlsx")
+        df.to_excel(writer)
+        try_save_writer(writer, title + ".xlsx")

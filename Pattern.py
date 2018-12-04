@@ -1,5 +1,5 @@
 import sys
-from Classes.Events import *
+from report_api.Classes.Events import *
 
 
 class Pattern:
