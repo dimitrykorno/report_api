@@ -1,5 +1,6 @@
 import time
 from functools import wraps
+import os
 import math
 from math import sqrt
 import pandas as pd
@@ -121,7 +122,7 @@ def get_timediff(datetime_1=None, datetime_2=None, measure="min"):
         print("Неверный промежуток времени")
 
 
-def try_save_writer(wr, filename):
+def try_save_writer(wr, filename=""):
     while True:
         try:
             wr.save()
@@ -301,7 +302,8 @@ def draw_plot(x_par, y_dict,
               title=None, folder="", format="png",
               plot_type="plot", colors=None,
               show=False,
-              additional_labels=[]):
+              additional_labels=[],
+              calculate_sum=True):
     """
     рисование графика, расситано на одновременное рисование множества графиков из словаря
     :param x_par: иксы
@@ -315,7 +317,8 @@ def draw_plot(x_par, y_dict,
     :param format: формат сохранения картинки
     :return:
     """
-
+    if type(y_dict) is not dict:
+        y_dict={"Y":y_dict}
     # Цвета
     hsv = plt.get_cmap('hsv')
     if not colors:
@@ -337,16 +340,16 @@ def draw_plot(x_par, y_dict,
     ax = plt.subplot(111)
     for index, y_key in enumerate(y_dict):
         y_values = y_dict[y_key]
-        try:
-            label = additional_labels
-        except:
-            label = y_key
         if type(y_values[0]) is list:
+            if len(additional_labels) != len(y_values[0]):
+                label = additional_labels + ["unknown"] * (min(0, len(y_values[0]) - len(additional_labels)))
+            else:
+                label = additional_labels
             if plot_type == "bar":
                 for i in range(len(y_values[0])):
                     ax.bar([x + i / (len(y_values[0]) + 1) for x in x_par], [y[i] for y in y_values],
                            width=1 / (len(y_values[0]) + 1),
-                           label=str(label[i]) + " " + str(sum([y[i] for y in y_values])),
+                           label=str(label[i]) + " " + str(sum([y[i] for y in y_values])) if calculate_sum else str(label[i]),
                            color=colors[i],
                            linestyle=linestyles[current_linestyle]
                            )
@@ -355,21 +358,25 @@ def draw_plot(x_par, y_dict,
                     print("Unknown plot type:", plot_type)
                 for i in range(len(y_values[0])):
                     ax.plot(x_par, [y[i] for y in y_values],
-                            label=str(label[i]) + " " + str(sum([y[i] for y in y_values])),
+                            label=str(label[i]) + " " + str(sum([y[i] for y in y_values])) if calculate_sum else str(label[i]),
                             color=colors[i],
                             linestyle=linestyles[current_linestyle]
                             )
         else:
+            if additional_labels:
+                label = additional_labels[0] if type(additional_labels) is list else additional_labels
+            else:
+                label = y_key
             if plot_type == "bar":
                 ax.bar(x_par, y_values,
-                       label=str(label) + " " + str(sum(y_values)),
+                       label=str(label) + " " + str(sum(y_values)) if calculate_sum else str(label),
                        color=colors[index],
                        linestyle=linestyles[current_linestyle])
             else:
                 if plot_type != "plot":
                     print("Unknown plot type:", plot_type)
                 ax.plot(x_par, y_values,
-                        label=str(label) + " " + str(sum(y_values)),
+                        label=str(label) + " " + str(sum(y_values)) if calculate_sum else str(label),
                         color=colors[index],
                         linestyle=linestyles[current_linestyle])
         # Выбор линии
@@ -392,8 +399,9 @@ def draw_plot(x_par, y_dict,
     if not title:
         title = str(list(y_dict.keys()))
     plt.savefig(folder + title + "." + format,
-                bbox_extra_artists=(ax.legend,),
-                bbox_inches='tight')
+                #bbox_extra_artists=(ax.legend,),
+                #bbox_inches='tight'
+                )
     if show:
         plt.show()
 
@@ -418,6 +426,8 @@ def draw_subplot(x_par, y_dict,
     :param format: формат сохранения картинки
     :return:
     """
+    if type(y_dict) is not dict:
+        y_dict={"Y":y_dict}
 
     # Строки и столбцы
     rows = size[0]
@@ -548,3 +558,11 @@ def log_approximation(x, y):
                         list(map(mul, [b] * len(new_x), list(map(log, list(map(add, [1] * len(new_x), new_x))))))))
 
     return func
+
+def check_folder(folder_dest,additional_folders=[]):
+    if folder_dest[-1]!="/":
+        folder_dest+="/"
+    for folder in additional_folders:
+        folder_dest+=folder+"/"
+    if not os.path.exists(folder_dest):
+        os.makedirs(folder_dest)
