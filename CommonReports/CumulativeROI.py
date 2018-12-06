@@ -7,7 +7,7 @@ import pandas as pd
 from dateutil.rrule import rrule, DAILY
 from report_api.OS import OS
 from report_api.Report import Report
-from report_api.Utilities.Utils import time_count, log_approximation,check_folder
+from report_api.Utilities.Utils import time_count, log_approximation,check_folder,check_arguments,try_save_writer
 from sop_analytics.Classes.Events import *
 
 
@@ -38,12 +38,19 @@ def new_report(parser=None,
 
     :return:
     """
+
+    errors = check_arguments(locals())
+    result_files = []
+    check_folder(folder_dest)
+    if errors:
+        return errors, result_files
     # Приводим границы периода к виду datetime.date
     if isinstance(period_start, str):
-        period_start = datetime.strptime(period_start, "%Y-%m-%d").date()
+       period_start = datetime.strptime(period_start, "%Y-%m-%d").date()
     if isinstance(period_end, str):
         period_end = datetime.strptime(period_end, "%Y-%m-%d").date()
-
+    if not days_since_install:
+        days_since_install=365
     # Списки CPI известных трекинговых ссылок
     cpi = {
         "unknown": 0,
@@ -237,7 +244,8 @@ def new_report(parser=None,
             overall_publisher_installs = 0
 
             # Запись в отдельную таблицу
-            writer = pd.ExcelWriter(folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx")
+            filename=folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx"
+            writer = pd.ExcelWriter(filename)
             # По каждоый трекинговой ссылке
             for source in sources[publisher]:
                 overall_source_arppu = dict.fromkeys(accumulating_parameters, 0)
@@ -467,14 +475,8 @@ def new_report(parser=None,
                 # print(df.to_string(index=False))
                 df.to_excel(excel_writer=writer, sheet_name=source, index=False)
 
-            while True:
-                try:
-                    writer.save()
-                    break
-                except PermissionError:
-                    print("!!! CLOSE FILE !!!",
-                          folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx")
-                    sleep(2)
+            try_save_writer(writer,filename)
+            result_files.append(filename)
             # График общего ARPU по паблишеру
             plt.figure(figsize=(16, 8))
             if overall_publisher_installs > 0:
@@ -504,13 +506,10 @@ def new_report(parser=None,
                 **transaction
             }, ignore_index=True)
 
-
-        writer = pd.ExcelWriter(folder_dest + OS.get_os_string(os_obj) + " Transactions.xlsx")
+        filename=folder_dest + OS.get_os_string(os_obj) + " Transactions.xlsx"
+        writer = pd.ExcelWriter(filename)
         df_transactions.to_excel(writer, index=False)
-        while True:
-            try:
-                writer.save()
-                break
-            except PermissionError:
-                print("!!! CLOSE FILE !!!", folder_dest + OS.get_os_string(os_obj) + " Transactions.xlsx")
-                sleep(2)
+        try_save_writer(writer,filename)
+        result_files.append(filename)
+
+    return errors,result_files

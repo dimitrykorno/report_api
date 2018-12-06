@@ -19,6 +19,13 @@ def new_report(os_list=["iOS"],
     :param app_versions: версии приложения (вводить в виде '5.1', '5,3' )
     :return:
     """
+    errors = check_arguments(locals())
+    result_files = []
+    check_folder(folder_dest)
+
+    if errors:
+        return errors, result_files
+
     for os_str in os_list:
         plt.figure(figsize=(12, 8))
         plt.title("Отвалы " + os_str)
@@ -60,6 +67,10 @@ def new_report(os_list=["iOS"],
 
             print("Average lifetime", app_version, ":", average_lifetime, "дней")
             plt.plot(range(len(lt)), lt, label=app_version)
-            plt.savefig(folder_dest+"Отвалы по дням " + app_version + " " + os_str + ".png")
+
         plt.legend()
-        plt.show()
+        filename = folder_dest + "Отвалы по дням " + str(app_versions) + " " + os_str + ".png"
+        plt.savefig(filename)
+        result_files.append(filename)
+        #plt.show()
+    return errors,result_files

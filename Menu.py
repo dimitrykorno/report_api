@@ -7,13 +7,12 @@ class Menu:
     reports = None
 
     @classmethod
-    def menu(cls, reports, mode):
+    def menu_handsmode(cls, reports):
         """
         Создание меню по списку отчетов
         :param reports: словарь соответствия названия отчета и функции отчета
         :return:
         """
-        cls.mode = mode
         cls.reports = reports
         while True:
 
@@ -105,58 +104,61 @@ class Menu:
         return args, defaults, types
 
     @classmethod
-    def parse_value(cls, new_value, default, type):
-        print("start parse", new_value, default, type)
+    def parse_value(cls, new_value, default, def_type):
+        #print("start parse, new:", new_value,"def:", default,"type:", def_type, type(default))
         if new_value.lower() in ("null", "none"):
             new_value = None
-        elif type is int:
+        elif def_type is int:
             try:
                 new_value = int(new_value)
             except:
                 new_value = default
-        elif type is bool:
+        elif def_type is bool:
             if str(new_value).lower() in ("true", "1", "yes"):
                 new_value = True
             elif str(new_value).lower() in ("false", "0", "not"):
                 new_value = False
             else:
                 new_value = default
-        elif type is list:
+        elif def_type is list:
             try:
+                new_value.replace("[","")
+                new_value.replace("]","")
                 new_value = new_value.replace(" ", "").split(",")
             except:
                 new_value = default
-        elif type is None:
+        elif def_type is None:
             try:
                 new_value = int(new_value)
             except:
                 new_value = str(new_value)
+        elif type(default) is str and len(default.split("-")[0])==4 and len(default.split("-")[1])==2 and len(default.split("-")[2])==2:
+            if not (len(new_value.split("-")[0])==4 and len(new_value.split("-")[1])==2 and len(new_value.split("-")[2])==2):
+                new_value=default
         elif new_value in ("", " "):
             new_value = default
-        print("end parse", new_value, default, type)
+        #print("end parse, new:", new_value,"def:", default,"type:", def_type)
         return new_value
 
 
-    # def synchronized(wrapped):
-    #     lock = threading.Lock()
-    #     print(lock, id(lock))
-    #     @functools.wraps(wrapped)
-    #     def _wrap(*args, **kwargs):
-    #         with lock:
-    #             print("Calling '%s' with Lock %s from thread %s [%s]"
-    #                   % (wrapped.__name__, id(lock),
-    #                      threading.current_thread().name, time.time()))
-    #             result = wrapped(*args, **kwargs)
-    #             print("Done '%s' with Lock %s from thread %s [%s]"
-    #                   % (wrapped.__name__, id(lock),
-    #                      threading.current_thread().name, time.time()))
-    #             return result
-    #
-    #     return _wrap
-    #
-    # @classmethod
-    # @synchronized
+    def synchronized(wrapped):
+        lock = threading.Lock()
+        #print(lock, id(lock))
+        @functools.wraps(wrapped)
+        def _wrap(*args, **kwargs):
+            with lock:
+                print("Calling '%s' with Lock %s from thread %s [%s]"
+                      % (wrapped.__name__, id(lock),
+                         threading.current_thread().name, time.time()))
+                result = wrapped(*args, **kwargs)
+                print("Done '%s' with Lock %s from thread %s [%s]"
+                      % (wrapped.__name__, id(lock),
+                         threading.current_thread().name, time.time()))
+                return result
+
+        return _wrap
+
     @classmethod
+    @synchronized
     def execute_report(cls, reports, rep_num, settings):
-        print("executing",reports[rep_num - 1][0])
         return reports[rep_num - 1][1](*settings)

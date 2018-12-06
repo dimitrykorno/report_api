@@ -16,11 +16,11 @@ class OS(Enum):
         :param os: ос
         :return:
         """
-        if isinstance(os, str):
-            os = OS.get_os(os)
-        if os == OS.android or os == OS.amazon:
+        # if isinstance(os, str):
+        #     os = OS.get_os(os)
+        if os in (OS.android, OS.amazon) or (type(os) is str and os.lower() in ("android", "amazon")):
             return "android_id"
-        elif os == OS.ios:
+        elif os == OS.ios or (type(os) is str and os.lower() == "ios"):
             return "ios_ifv"
 
     @staticmethod
@@ -30,11 +30,11 @@ class OS(Enum):
         :param os: ос
         :return:
         """
-        if isinstance(os, str):
-            os = OS.get_os(os)
-        if os == OS.android or os == OS.amazon:
+        # if isinstance(os, str):
+        #     os = OS.get_os(os)
+        if os in (OS.android, OS.amazon) or (type(os) is str and os.lower() in ("android", "amazon")):
             return "google_aid"
-        elif os == OS.ios:
+        elif os == OS.ios or (type(os) is str and os.lower() == "ios"):
             return "ios_ifa"
 
     @staticmethod

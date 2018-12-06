@@ -3,6 +3,7 @@ from report_api.Report import Report
 from datetime import datetime
 import pandas as pd
 from dateutil import rrule
+from report_api.Utilities.Utils import try_save_writer,check_arguments,check_folder
 
 def new_report(shop=None,
                parser=None,
@@ -18,10 +19,19 @@ def new_report(shop=None,
                max_version=None,
                countries_list=[]
                ):
+    errors = check_arguments(locals())
+    result_files = []
+    check_folder(folder_dest)
+
+    if errors:
+        return errors, result_files
+
     if isinstance(period_start, str):
         period_start = datetime.strptime(period_start, "%Y-%m-%d").date()
     if isinstance(period_end, str):
         period_end = datetime.strptime(period_end, "%Y-%m-%d").date()
+    if after_release_months_graphs not in (None,True,False):
+        after_release_months_graphs=None
 
     for os_str in os_list:
 
@@ -81,7 +91,8 @@ def new_report(shop=None,
             countries[country][in_app][month] += 1
 
         months_list = sorted(months_list)
-        writer = pd.ExcelWriter(folder_dest + "/Sales" + os_str + ".xlsx")
+        filename=folder_dest + "/Sales" + os_str + ".xlsx"
+        writer = pd.ExcelWriter(filename)
         for country in countries.keys():
             df = pd.DataFrame(index=unique_inapps, columns=parameters + months_list)
             for in_app in unique_inapps:
@@ -106,4 +117,6 @@ def new_report(shop=None,
             df["Revenue"] = df["Sales"] * df["Price"]
             df.sort_values(by=["Category 1", "Category 2", "Category 3", "Sales"], ascending=False, inplace=True)
             df.to_excel(writer, sheet_name=country)
-        writer.save()
+        try_save_writer(writer,filename)
+        result_files.append(filename)
+    return errors,result_files

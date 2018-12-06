@@ -14,6 +14,12 @@ def new_report(os_list=["iOS"],
                folder_dest=None,
                app_version='7.0',
                users_limit=10000 ):
+    errors = check_arguments(locals())
+    result_files = []
+    check_folder(folder_dest)
+
+    if errors:
+        return errors, result_files
 
     for os_str in os_list:
         user_aid = OS.get_aid(os_str)
@@ -50,5 +56,8 @@ def new_report(os_list=["iOS"],
         plt.figure(figsize=(15, 6))
         plt.barh(range(len(list(ordered_events.values()))), list(ordered_events.values()))
         plt.yticks(range(len(list(ordered_events.values()))), list(ordered_events.keys()))
-        plt.savefig(folder_dest+"last_event_histo " + os_str + ".png")
-        plt.show()
+        filename=folder_dest+"last_event_histo " + os_str + ".png"
+        plt.savefig(filename)
+        #plt.show()
+        result_files.append(filename)
+    return errors, result_files

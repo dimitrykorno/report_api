@@ -198,10 +198,12 @@ class Report(Singleton):
         if cls.is_new_user(next_id1=user_id1, next_id2=user_id2):
 
             # time4 = time.perf_counter()
-            new_user = cls.User(id_1=user_id1, id_2=user_id2)
-
             # если он прошел проверки на версию установленного приложения и на тестера, то становится
             # новым текущим пользователем
+            new_user = cls.User(id_1=user_id1, id_2=user_id2)
+
+
+            #получаем данные о пользователе
             if MySQLHandler.installs_list:
                 new_user.install_date, \
                 new_user.publisher, \
@@ -332,11 +334,11 @@ class Report(Singleton):
         if cls.current_user and (next_id1 or next_id2):
             return cls.current_user.user_id not in (next_id1, next_id2)
         elif cls.current_user and cls.previous_user:
-            if cls.current_user.user_id == "" and cls.previous_user.user_id == "":
-                if cls.previous_user.country != cls.current_user.country:
-                    return True
-                if cls.previous_user.installed_app_version > cls.current_user.installed_app_version:
-                    return True
+            # if cls.current_user.user_id == "" and cls.previous_user.user_id == "":
+            #     if cls.previous_user.country != cls.current_user.country:
+            #         return True
+            #     if cls.previous_user.installed_app_version > cls.current_user.installed_app_version:
+            #         return True
             return cls.current_user.user_id != cls.previous_user.user_id
 
         elif cls.current_user and not cls.previous_user:

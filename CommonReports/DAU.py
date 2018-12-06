@@ -31,6 +31,12 @@ def new_report(app=None,
 
     :return:
     """
+    errors = check_arguments(locals())
+    result_files = []
+    check_folder(folder_dest)
+
+    if errors:
+        return errors, result_files
 
     if not period_start:
         period_start = "2018-01-01"
@@ -81,6 +87,9 @@ def new_report(app=None,
                   title=title, calculate_sum=False)
         df = pd.DataFrame(index=x, columns=["users"])
         df["users"] = y
-        writer = pd.ExcelWriter(folder_dest + title + ".xlsx")
+        filename=folder_dest + title + ".xlsx"
+        writer = pd.ExcelWriter(filename)
         df.to_excel(writer)
-        try_save_writer(writer, title + ".xlsx")
+        try_save_writer(writer, filename)
+        result_files.append(filename)
+    return errors,result_files

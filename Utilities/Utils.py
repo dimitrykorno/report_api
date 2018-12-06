@@ -1,3 +1,4 @@
+import inspect
 import time
 from functools import wraps
 import os
@@ -318,7 +319,7 @@ def draw_plot(x_par, y_dict,
     :return:
     """
     if type(y_dict) is not dict:
-        y_dict={"Y":y_dict}
+        y_dict = {"Y": y_dict}
     # Цвета
     hsv = plt.get_cmap('hsv')
     if not colors:
@@ -349,7 +350,8 @@ def draw_plot(x_par, y_dict,
                 for i in range(len(y_values[0])):
                     ax.bar([x + i / (len(y_values[0]) + 1) for x in x_par], [y[i] for y in y_values],
                            width=1 / (len(y_values[0]) + 1),
-                           label=str(label[i]) + " " + str(sum([y[i] for y in y_values])) if calculate_sum else str(label[i]),
+                           label=str(label[i]) + " " + str(sum([y[i] for y in y_values])) if calculate_sum else str(
+                               label[i]),
                            color=colors[i],
                            linestyle=linestyles[current_linestyle]
                            )
@@ -358,7 +360,8 @@ def draw_plot(x_par, y_dict,
                     print("Unknown plot type:", plot_type)
                 for i in range(len(y_values[0])):
                     ax.plot(x_par, [y[i] for y in y_values],
-                            label=str(label[i]) + " " + str(sum([y[i] for y in y_values])) if calculate_sum else str(label[i]),
+                            label=str(label[i]) + " " + str(sum([y[i] for y in y_values])) if calculate_sum else str(
+                                label[i]),
                             color=colors[i],
                             linestyle=linestyles[current_linestyle]
                             )
@@ -399,8 +402,8 @@ def draw_plot(x_par, y_dict,
     if not title:
         title = str(list(y_dict.keys()))
     plt.savefig(folder + title + "." + format,
-                #bbox_extra_artists=(ax.legend,),
-                #bbox_inches='tight'
+                # bbox_extra_artists=(ax.legend,),
+                # bbox_inches='tight'
                 )
     if show:
         plt.show()
@@ -427,7 +430,7 @@ def draw_subplot(x_par, y_dict,
     :return:
     """
     if type(y_dict) is not dict:
-        y_dict={"Y":y_dict}
+        y_dict = {"Y": y_dict}
 
     # Строки и столбцы
     rows = size[0]
@@ -457,7 +460,7 @@ def draw_subplot(x_par, y_dict,
     for index, y_key in enumerate(y_dict):
         plot_num += 1
         # Новый экран
-        if index!=0 and plot_num % (rows * columns):
+        if index != 0 and plot_num % (rows * columns):
             plot_num = 1
             if not title:
                 title = str(list(y_dict.keys()))
@@ -530,6 +533,7 @@ def draw_subplot(x_par, y_dict,
     if show:
         plt.show()
 
+
 def log_approximation(x, y):
     """
     Логарифмическая аппроксимация
@@ -559,10 +563,62 @@ def log_approximation(x, y):
 
     return func
 
-def check_folder(folder_dest,additional_folders=[]):
-    if folder_dest[-1]!="/":
-        folder_dest+="/"
+
+def check_folder(folder_dest, additional_folders=[]):
+    if folder_dest[-1] != "/":
+        folder_dest += "/"
     for folder in additional_folders:
-        folder_dest+=folder+"/"
+        folder_dest += folder + "/"
     if not os.path.exists(folder_dest):
         os.makedirs(folder_dest)
+
+
+def check_arguments(args):
+    errors = set()
+    def check_app_version(value):
+        return type(value) is not str or ("." not in value and "," not in value)
+    def check_digit(value):
+        return (type(value) is str and not value.isdigit()) and (not type(value) is int)
+    # рассматриваем спсиок аргументов и значений
+    for arg in args:
+        value = args[arg]
+        if value is None:
+            continue
+        if arg in ("period_start", "period_end"):
+            try:
+                datetime.datetime.strptime(value, "%Y-%m-%d").date()
+            except:
+                errors.add("Формат даты не соответствует YYYY-MM-DD.")
+        elif arg in ("os_list", "countries_list","days","app_versions"):
+            if not type(value) is list:
+                errors.add("ОС и страны должны быть в формате списка")
+            elif arg == "os_list":
+                for v in value:
+                    if v.lower() not in ("ios", "android", "amazon"):
+                        errors.add("ОС должны быть из ('ios','android','amazon')")
+                        break
+            elif arg == "countries_list":
+                for v in value:
+                    if len(v) != 2:
+                        errors.add("Страны должны быть в формате ISO (RU, US, UA..)")
+            elif arg=="app_versions":
+                for v in value:
+                    if check_app_version(v):
+                        errors.add("Версии приложения должны быть строкового вида (4.7 или 1.3.5)")
+                        break
+            elif arg=="days":
+                for v in value:
+                    if check_digit(v):
+                        errors.add("Дни должны быть списком чисел [1,2,3,4..]")
+                        break
+        elif arg in ("min_version", "max_version"):
+            if check_app_version(value):
+                errors.add("Версии приложения должны быть строкового вида (4.7 или 1.3.5)")
+        elif arg in ("start", "quantity", "days_left", "days_max", "days_since_install","users_limit","max_level"):
+            if check_digit(value):
+                errors.add("Параметр " + arg + " должен быть числом.")
+        elif arg in ("game_point","level_num"):
+            if type(value) is not str or type(value) is str and not( len(value) == 4 or len(value)==8):
+                errors.add("Уровни должны иметь формат 0031, квесты loc03q02")
+
+    return "\n".join(errors)
