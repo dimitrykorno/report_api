@@ -1,8 +1,8 @@
 from report_api.Data.Data import get_data
-from report_api.Utilities.Utils import time_count
+from report_api.Utilities.Utils import time_count,check_folder,check_arguments
 import matplotlib.pyplot as plt
 from report_api.OS import OS
-
+import os
 # noinspection PyDefaultArgument,PyDefaultArgument
 @time_count
 def new_report(os_list=["iOS"],
@@ -21,6 +21,8 @@ def new_report(os_list=["iOS"],
     """
     errors = check_arguments(locals())
     result_files = []
+    if hasattr(new_report,'user'):
+        folder_dest+=str(new_report.user)+"/"
     check_folder(folder_dest)
 
     if errors:
@@ -71,6 +73,6 @@ def new_report(os_list=["iOS"],
         plt.legend()
         filename = folder_dest + "Отвалы по дням " + str(app_versions) + " " + os_str + ".png"
         plt.savefig(filename)
-        result_files.append(filename)
+        result_files.append(os.path.abspath(filename))
         #plt.show()
     return errors,result_files

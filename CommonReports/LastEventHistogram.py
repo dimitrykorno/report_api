@@ -1,8 +1,9 @@
 from collections import OrderedDict
 from matplotlib import pyplot as plt
-from report_api.Utilities.Utils import time_count
+from report_api.Utilities.Utils import time_count,check_arguments,check_folder
 from report_api.OS import OS
 from report_api.Data import Data
+import os
 app = "sop"
 
 
@@ -13,9 +14,11 @@ def new_report(os_list=["iOS"],
                app=None,
                folder_dest=None,
                app_version='7.0',
-               users_limit=10000 ):
+               users_limit=5000 ):
     errors = check_arguments(locals())
     result_files = []
+    if hasattr(new_report,'user'):
+        folder_dest+=str(new_report.user)+"/"
     check_folder(folder_dest)
 
     if errors:
@@ -59,5 +62,5 @@ def new_report(os_list=["iOS"],
         filename=folder_dest+"last_event_histo " + os_str + ".png"
         plt.savefig(filename)
         #plt.show()
-        result_files.append(filename)
+        result_files.append(os.path.abspath(filename))
     return errors, result_files

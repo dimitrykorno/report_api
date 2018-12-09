@@ -1,3 +1,6 @@
+from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import inspect
 import time
 from functools import wraps
@@ -5,7 +8,6 @@ import os
 import math
 from math import sqrt
 import pandas as pd
-from matplotlib import pyplot as plt
 import numpy as np
 from math import log
 from operator import mul, add, sub, pow
@@ -318,6 +320,7 @@ def draw_plot(x_par, y_dict,
     :param format: формат сохранения картинки
     :return:
     """
+    result_files=[]
     if type(y_dict) is not dict:
         y_dict = {"Y": y_dict}
     # Цвета
@@ -401,13 +404,12 @@ def draw_plot(x_par, y_dict,
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True, ncol=5)
     if not title:
         title = str(list(y_dict.keys()))
-    plt.savefig(folder + title + "." + format,
-                # bbox_extra_artists=(ax.legend,),
-                # bbox_inches='tight'
-                )
+    filename=folder + title + "." + format
+    plt.savefig( filename)
+    result_files.append(filename)
     if show:
         plt.show()
-
+    return result_files
 
 def draw_subplot(x_par, y_dict,
                  xtick_steps=1, xticks_move=0, x_ticks_labels=list(),
@@ -429,6 +431,7 @@ def draw_subplot(x_par, y_dict,
     :param format: формат сохранения картинки
     :return:
     """
+    result_files=[]
     if type(y_dict) is not dict:
         y_dict = {"Y": y_dict}
 
@@ -464,9 +467,11 @@ def draw_subplot(x_par, y_dict,
             plot_num = 1
             if not title:
                 title = str(list(y_dict.keys()))
-            plt.savefig(folder + title + "." + format)
+            filename=folder + title +" "+str(index)+ "." + format
+            plt.savefig(filename)
             if show:
                 plt.show()
+            result_files.append(filename)
             plt.figure(figsize=(17, 8))
 
         ax = plt.subplot(rows, columns, plot_num)
@@ -529,10 +534,12 @@ def draw_subplot(x_par, y_dict,
 
     if not title:
         title = str(list(y_dict.keys()))
-    plt.savefig(folder + title + "." + format)
+    filename=folder + title +" "+str(index+1)+ "." + format
+    plt.savefig(filename)
+    result_files.append(filename)
     if show:
         plt.show()
-
+    return result_files
 
 def log_approximation(x, y):
     """
@@ -604,7 +611,7 @@ def check_arguments(args):
             elif arg=="app_versions":
                 for v in value:
                     if check_app_version(v):
-                        errors.add("Версии приложения должны быть строкового вида (4.7 или 1.3.5)")
+                        errors.add("Версии приложения должны быть строкового вида с точкой (4.7 или 1.3.5)")
                         break
             elif arg=="days":
                 for v in value:

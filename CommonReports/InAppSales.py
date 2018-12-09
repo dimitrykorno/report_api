@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 from dateutil import rrule
 from report_api.Utilities.Utils import try_save_writer,check_arguments,check_folder
-
+import os
 def new_report(shop=None,
                parser=None,
                user_class=None,
@@ -21,6 +21,8 @@ def new_report(shop=None,
                ):
     errors = check_arguments(locals())
     result_files = []
+    if hasattr(new_report,'user'):
+        folder_dest+=str(new_report.user)+"/"
     check_folder(folder_dest)
 
     if errors:
@@ -118,5 +120,5 @@ def new_report(shop=None,
             df.sort_values(by=["Category 1", "Category 2", "Category 3", "Sales"], ascending=False, inplace=True)
             df.to_excel(writer, sheet_name=country)
         try_save_writer(writer,filename)
-        result_files.append(filename)
+        result_files.append(os.path.abspath(filename))
     return errors,result_files

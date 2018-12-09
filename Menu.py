@@ -160,5 +160,7 @@ class Menu:
 
     @classmethod
     @synchronized
-    def execute_report(cls, reports, rep_num, settings):
-        return reports[rep_num - 1][1](*settings)
+    def execute_report(cls, reports, rep_num, settings, user):
+        rep=reports[rep_num - 1][1]
+        rep.user=user
+        return rep(*settings)

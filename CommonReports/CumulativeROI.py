@@ -9,7 +9,7 @@ from report_api.OS import OS
 from report_api.Report import Report
 from report_api.Utilities.Utils import time_count, log_approximation,check_folder,check_arguments,try_save_writer
 from sop_analytics.Classes.Events import *
-
+import os
 
 # noinspection PyDefaultArgument,PyDefaultArgument
 def new_report(parser=None,
@@ -41,6 +41,8 @@ def new_report(parser=None,
 
     errors = check_arguments(locals())
     result_files = []
+    if hasattr(new_report,'user'):
+        folder_dest+=str(new_report.user)+"/"
     check_folder(folder_dest)
     if errors:
         return errors, result_files
@@ -493,9 +495,10 @@ def new_report(parser=None,
             plt.legend()
             title = OS.get_os_string(os_obj) + " Прогноз ARPU по всем источникам " + publisher
             plt.title(title)
-            plt.savefig(folder_dest + title + ".png", bbox_inches='tight')
-
+            filename=folder_dest + title + ".png"
+            plt.savefig(filename, bbox_inches='tight')
             plt.close()
+            result_files.append(os.path.abspath(filename))
         print("Not found CPI sources", not_sound_cpi)
 
         df_transactions = pd.DataFrame(index=[],
@@ -510,6 +513,6 @@ def new_report(parser=None,
         writer = pd.ExcelWriter(filename)
         df_transactions.to_excel(writer, index=False)
         try_save_writer(writer,filename)
-        result_files.append(filename)
+        result_files.append(os.path.abspath(filename))
 
     return errors,result_files

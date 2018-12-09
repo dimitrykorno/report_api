@@ -33,6 +33,8 @@ def new_report(app=None,
     """
     errors = check_arguments(locals())
     result_files = []
+    if hasattr(new_report,'user'):
+        folder_dest+=str(new_report.user)+"/"
     check_folder(folder_dest)
 
     if errors:
@@ -91,5 +93,5 @@ def new_report(app=None,
         writer = pd.ExcelWriter(filename)
         df.to_excel(writer)
         try_save_writer(writer, filename)
-        result_files.append(filename)
+        result_files.append(os.path.abspath(filename))
     return errors,result_files
