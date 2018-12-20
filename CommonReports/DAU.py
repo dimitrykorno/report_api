@@ -3,9 +3,9 @@ import pandas as pd
 from report_api.Classes.QueryHandler import QueryHandler
 from report_api.Report import Report
 from report_api.Data import Data
-from report_api.Utilities.Utils import check_folder, draw_plot, try_save_writer
+from report_api.Utilities.Utils import check_folder, draw_plot, try_save_writer,check_arguments
 from report_api.Classes.Events import *
-
+import os
 
 # noinspection PyDefaultArgument,PyDefaultArgument
 def new_report(app=None,
@@ -73,11 +73,11 @@ def new_report(app=None,
         title=os_str+title
         sql = """
             SELECT date(event_datetime) as day,COUNT(ios_ifa) as users
-            from {0}_events.events_{1}
-            where event_datetime between '{2}' and '{3}' {4} {5} {6}
+            from {0}
+            where event_datetime between '{1}' and '{2}' {3} {4} {5}
             group by date(event_datetime)
             order by date(event_datetime)
-            """.format(app, os_str.lower(), period_start, period_end, json_line, app_version,countries)
+            """.format(QueryHandler.get_db_name(os_str.lower(),app), period_start, period_end, json_line, app_version,countries)
 
         result, db = Data.get_data(sql, app, by_row=False, name="Рассчет DAU.")
         db.close()

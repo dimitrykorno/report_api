@@ -53,6 +53,8 @@ def new_report(parser=None,
         period_end = datetime.strptime(period_end, "%Y-%m-%d").date()
     if not days_since_install:
         days_since_install=365
+    else:
+        days_since_install=int(days_since_install)
     # Списки CPI известных трекинговых ссылок
     cpi = {
         "unknown": 0,
@@ -493,7 +495,7 @@ def new_report(parser=None,
             plt.plot(range(len(y_real_arpu)), y_real_arpu, '*', color="green", label="known")
             plt.plot(np.arange(0, days_since_install, 1), y, '--', color="red", label="approximate")
             plt.legend()
-            title = OS.get_os_string(os_obj) + " Прогноз ARPU по всем источникам " + publisher
+            title = OS.get_os_string(os_obj) + " ARPU all sources " + publisher
             plt.title(title)
             filename=folder_dest + title + ".png"
             plt.savefig(filename, bbox_inches='tight')

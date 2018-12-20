@@ -95,17 +95,21 @@ class QueryHandler():
         :param database: база данных (событий или установки)
         :return:
         """
+        self.from_row = QueryHandler.get_db_name(os,app,database)
+
+    @staticmethod
+    def get_db_name(os=OS.ios, app="sop", database="events"):
         if get_env() == "laptop":
-            self.from_row = """
+            return """
             from {}_events.{}_{}
             """.format(app, database, OS.get_os_string(os))
         elif get_env() == "server":
             if database == "events":
-                self.from_row = """
+                return  """
                 from analytics.events
                 """
             elif database == "installs":
-                self.from_row = """
+                return  """
                 from analytics.installations
                 """
 
@@ -176,7 +180,7 @@ class QueryHandler():
             countries = """
             and 
             country_iso_code in ('{}')
-            """.format("','".join(countries_list))
+            """.format("','".join(map(lambda x:x.upper(),countries_list)))
 
         events=QueryHandler.add_events_line(events_list)
 

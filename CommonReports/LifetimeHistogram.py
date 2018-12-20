@@ -2,6 +2,7 @@ from report_api.Data.Data import get_data
 from report_api.Utilities.Utils import time_count,check_folder,check_arguments
 import matplotlib.pyplot as plt
 from report_api.OS import OS
+from report_api.Classes.QueryHandler import QueryHandler
 import os
 # noinspection PyDefaultArgument,PyDefaultArgument
 @time_count
@@ -9,7 +10,7 @@ def new_report(os_list=["iOS"],
                folder_dest=None,
                app="sop",
                max_days=100,
-               app_versions=['5.1', '5.3'],
+               app_versions=['1.0'],
                users_limit=10000,
                app_entry_event_check=""):
     """
@@ -28,6 +29,14 @@ def new_report(os_list=["iOS"],
     if errors:
         return errors, result_files
 
+    if not users_limit:
+        users_limit=100000
+    else:
+        users_limit=int(users_limit)
+    if not max_days:
+        max_days = 365
+    else:
+        max_days = int(max_days)
     for os_str in os_list:
         plt.figure(figsize=(12, 8))
         plt.title("Отвалы " + os_str)
@@ -36,17 +45,17 @@ def new_report(os_list=["iOS"],
             # Пользователи, у которых первое событие с нужной версией приложения
             sql = """
             select (MAX(event_timestamp)-MIN(event_timestamp)) as lifetime_sec
-            from {0}_events.events_{1}
-            where {2} in (select ios_ifa
-                                from {0}_events.installs_{1}
-                                where {2}<>"" 
-                                group by {2}, app_version_name
-                                having MIN(app_version_name)={5}
+            from {0}
+            where {1} in (select ios_ifa
+                                from {0}
+                                where {1}<>"" 
+                                group by {1}, app_version_name
+                                having MIN(app_version_name)={4}
                                 )
-                    and {3}
-            group by {2}
-            LIMIT {4}
-            """.format(app,os_str.lower(),user_aid ,app_entry_event_check,users_limit,app_version)
+                    and {2}
+            group by {1}
+            LIMIT {3}
+            """.format(QueryHandler.get_db_name(os_str.lower(),app),user_aid ,app_entry_event_check,users_limit,app_version)
             file = open("sql " + os_str.lower() + " events.txt", "w")
             file.write(sql)
             file.close()
@@ -67,11 +76,11 @@ def new_report(os_list=["iOS"],
             while lt[-1] == 0:
                 lt.pop()
 
-            print("Average lifetime", app_version, ":", average_lifetime, "дней")
+            #print("Average lifetime", app_version, ":", average_lifetime, "дней")
             plt.plot(range(len(lt)), lt, label=app_version)
 
         plt.legend()
-        filename = folder_dest + "Отвалы по дням " + str(app_versions) + " " + os_str + ".png"
+        filename = folder_dest + "users gone per day " + str(app_versions) + " " + os_str + ".png"
         plt.savefig(filename)
         result_files.append(os.path.abspath(filename))
         #plt.show()

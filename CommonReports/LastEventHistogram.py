@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from report_api.Utilities.Utils import time_count,check_arguments,check_folder
 from report_api.OS import OS
 from report_api.Data import Data
+from report_api.Classes.QueryHandler import QueryHandler
 import os
 app = "sop"
 
@@ -23,21 +24,24 @@ def new_report(os_list=["iOS"],
 
     if errors:
         return errors, result_files
-
+    if not users_limit:
+        users_limit=100000
+    else:
+        users_limit=int(users_limit)
     for os_str in os_list:
         user_aid = OS.get_aid(os_str)
         sql = """
                     select {2}, event_name, event_json, MAX(event_datetime)
-                    from {0}_events.events_{1}
-                    where {2} in (select ios_ifa
-                                        from {0}_events.installs_{1}
-                                        where {2}<>"" 
-                                        group by {2}, app_version_name
-                                        having MIN(app_version_name)={4}
+                    from {0}
+                    where {1} in (select ios_ifa
+                                        from {0}
+                                        where {1}<>"" 
+                                        group by {1}, app_version_name
+                                        having MIN(app_version_name)={3}
                                         )
-                    group by {2}
-                    LIMIT {3}
-                    """.format(app, os_str.lower(), user_aid, users_limit, app_version)
+                    group by {1}
+                    LIMIT {2}
+                    """.format(QueryHandler.get_db_name(os_str.lower(),app), user_aid, users_limit, app_version)
         file = open("sql " + os_str.lower()+ " events.txt", "w")
         file.write(sql)
         file.close()

@@ -93,7 +93,7 @@ def new_report(shop=None,
             countries[country][in_app][month] += 1
 
         months_list = sorted(months_list)
-        filename=folder_dest + "/Sales" + os_str + ".xlsx"
+        filename=folder_dest + "/Sales " + os_str + ".xlsx"
         writer = pd.ExcelWriter(filename)
         for country in countries.keys():
             df = pd.DataFrame(index=unique_inapps, columns=parameters + months_list)
