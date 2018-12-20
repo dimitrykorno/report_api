@@ -50,16 +50,16 @@ def get_data(sql, db, by_row=True, name=""):
                 result = c
         else:
             # результат - список
-            result = list(c)
+            result = list(c) if c else None
             c.close()
 
     except OperationalError:
         raise OperationalError
 
-    if result:
-        return result, db
-    else:
+    if not result:
         print("Ничего не найдено.")
+    return result, db
+
 
 
 def get_env():
