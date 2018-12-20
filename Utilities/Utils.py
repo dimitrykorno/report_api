@@ -243,31 +243,8 @@ test_devices_ios = {
     "282AC74C-EE9E-418E-959D-423025E5A97D", "2AB947E4-B36A-44DA-9666-8456D11DF47B",
     "6AA563C5-65E0-416C-AC48-EBD79AB20D69", "2FA9246C-1CEB-4904-872D-F5B07371A571",
     "AD64F7A4-30CF-4C89-A33C-65AABE3D1061",
-    # "A322DE92-758A-4503-93D6-C2C58CF1B6A7", "7B633152-0E9F-478F-93DB-F5301D9BE271",
-    # "A322DE92-758A-4503-93D6-C2C58CF1B6A7",
-    # "722870FC-3EC0-4690-8B22-C6ACC1BA6304", "25EAF46B-09D2-4BF0-8F92-3F7CC1E2435D",
-    # "47ADA9C1-DADD-4115-A332-52F3291FBD76",
-
-    # "07632979-F475-43D2-B006-7D17DCDEBCCF",
-    # "E66C4F64-5CEE-40C6-9A04-FA512D3B6FF3",
-
-    # "CEB10F0B-57AE-4399-8B1F-19D1519380EC",
-    # "9B74F004-3894-4E23-8A89-7CEEE20753C1",
-
-
     "B4AB781D-654D-4AEB-AAE9-2F4ABF1BC92B",
-    # "DCE5132A-7691-4C96-ABD3-5E5A3308898B",
-    # # # омск,ipad mini4 куча покупок
-    # # "4B63E67D-BB82-4097-AE0A-D0136EBF8292",
-    # москва se куча покупок
     "AD249847-3E4A-41FA-A764-2CF7BFAC1D8C",
-    # # # временно, пока не решу, что делать с людьми, меняющими девайсы и ifa
-    # # "1E629546-A1E1-4B25-88DE-0AA4060F8509",
-    # # "44D40C4B-77C4-4CB0-8B9C-CE846D2C7BE1",
-    # # "60282134-AF9B-4BF5-A53A-BE84FE6CFD08",
-    # # "E6F740F0-3E52-4A9B-9350-32257BCA2FD1",
-    # # "42794211-5143-40C0-A126-4A0232F87C9E"
-
 }
 
 
@@ -401,12 +378,12 @@ def draw_plot(x_par, y_dict,
         for tick in ax.get_xticklabels():
             tick.set_rotation(45)
 
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True, ncol=5)
+    lgd = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=True, ncol=5)
     if not title:
         title = str(list(y_dict.keys()))
     filename=folder + title + "." + format
-    plt.savefig( filename)
-    result_files.append(filename)
+    plt.savefig( filename, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    result_files.append(os.path.abspath(filename))
     if show:
         plt.show()
     return result_files
@@ -465,13 +442,14 @@ def draw_subplot(x_par, y_dict,
         # Новый экран
         if index != 0 and plot_num % (rows * columns):
             plot_num = 1
+            lgd = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=True, ncol=5)
             if not title:
                 title = str(list(y_dict.keys()))
             filename=folder + title +" "+str(index)+ "." + format
-            plt.savefig(filename)
+            plt.savefig(filename, bbox_extra_artists=(lgd,), bbox_inches='tight')
             if show:
                 plt.show()
-            result_files.append(filename)
+            result_files.append(os.path.abspath(filename))
             plt.figure(figsize=(17, 8))
 
         ax = plt.subplot(rows, columns, plot_num)
@@ -530,13 +508,13 @@ def draw_subplot(x_par, y_dict,
         if xtick_steps <= 5 and (x_ticks_labels and max([len(str(t)) for t in x_ticks_labels]) > 4):
             for tick in ax.get_xticklabels():
                 tick.set_rotation(45)
-        ax.legend()
+        lgd = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=True, ncol=5)
 
     if not title:
         title = str(list(y_dict.keys()))
     filename=folder + title +" "+str(index+1)+ "." + format
-    plt.savefig(filename)
-    result_files.append(filename)
+    plt.savefig(filename, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    result_files.append(os.path.abspath(filename))
     if show:
         plt.show()
     return result_files
