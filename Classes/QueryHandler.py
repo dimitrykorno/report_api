@@ -95,7 +95,7 @@ class QueryHandler():
         :param database: база данных (событий или установки)
         :return:
         """
-        self.from_row = QueryHandler.get_db_name(os,app,database)
+        self.from_row = QueryHandler.get_db_name(os, app, database)
 
     @staticmethod
     def get_db_name(os=OS.ios, app="sop", database="events"):
@@ -105,11 +105,11 @@ class QueryHandler():
             """.format(app, database, OS.get_os_string(os))
         elif get_env() == "server":
             if database == "events":
-                return  """
+                return """
                 from analytics.events
                 """
             elif database == "installs":
-                return  """
+                return """
                 from analytics.installations
                 """
 
@@ -131,6 +131,27 @@ class QueryHandler():
         :return:
         """
 
+        self.where_row = QueryHandler.where_line(period_start,
+                                                 period_end,
+                                                 min_app_version,
+                                                 max_app_version,
+                                                 countries_list,
+                                                 events_list,
+                                                 self.os,
+                                                 self.database)
+
+    @staticmethod
+    def where_line(period_start=None,
+                   period_end=None,
+                   min_app_version=None,
+                   max_app_version=None,
+                   countries_list=[],
+                   events_list=[],
+                   os_str=OS.ios,
+                   database="events"):
+        user_id1 = OS.get_aid(os_str)
+        user_id2 = OS.get_id(os_str)
+        where_string = ""
         if period_start and isinstance(period_start, str):
             try:
                 period_start = datetime.strptime(period_start, "%Y-%m-%d").date()
@@ -147,10 +168,10 @@ class QueryHandler():
         if period_end:
             period_end += timedelta(days=1)
 
-        self.where_row += """
-        where
+        where_string += """
+        where (
         ( {} <> "" or {} <> "" )
-        """.format(self.user_id1, self.user_id2)
+        """.format(user_id1, user_id2)
 
         min_app_version = """
         and 
@@ -161,7 +182,7 @@ class QueryHandler():
         """.format(str(max_app_version)) if max_app_version else ""
 
         datetime_period = ""
-        datetime_name = "install_datetime " if "install" in self.database else "event_datetime"
+        datetime_name = "install_datetime " if "install" in database else "event_datetime"
         if period_end and period_start:
             datetime_period = """
         and
@@ -180,16 +201,19 @@ class QueryHandler():
             countries = """
             and 
             country_iso_code in ('{}')
-            """.format("','".join(map(lambda x:x.upper(),countries_list)))
+            """.format("','".join(map(lambda x: x.upper(), countries_list)))
 
-        events=QueryHandler.add_events_line(events_list)
-
-        for row in (min_app_version, max_app_version, datetime_period, countries, events):
+        for row in (min_app_version, max_app_version, datetime_period, countries):
             if row != "":
-                self.where_row += row + """
+                where_string += row + """
                 """
 
-                # print(self.where_row)
+        if events_list:
+            where_string += QueryHandler.add_events_line(events_list) + """
+                """
+        return where_string + ")"
+        # print(self.where_row)
+
     @staticmethod
     def add_events_line(events_list):
         # добавление списка событий event_name  и json

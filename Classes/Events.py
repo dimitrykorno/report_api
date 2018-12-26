@@ -1,5 +1,6 @@
 class Event:
     __slots__ = 'datetime', 'test_name'
+    # списки класса, при необходимости оценить среднее время парсинга
     medium_time = []
     medium_time_2 = []
 
@@ -9,7 +10,7 @@ class Event:
         self.test_name = test_name
         pass
 
-    def set_ab_test_name(self,test_name):
+    def set_ab_test_name(self, test_name):
         self.test_name = test_name
 
     def print(self):

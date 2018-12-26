@@ -43,7 +43,6 @@ class Report(Singleton):
     '''
     not_found = set()
     Parser = None
-    Event_class = None
     User = None
     os = OS.ios
     app = "sop"
@@ -68,7 +67,6 @@ class Report(Singleton):
     def reset(cls):
         cls.not_found = set()
         cls.Parser = None
-        cls.Event_class = None
         cls.User = None
         cls.os = OS.ios
         cls.app = "sop"
@@ -134,6 +132,7 @@ class Report(Singleton):
             # cls.time_2.append(time.perf_counter() - time2)
             # если больше нет событий, останавливаем цикл в отчёте
             if not cls.event_data:
+                cls.not_found=sorted(cls.not_found)
                 for log in cls.not_found:
                     print(log)
                 # cls.pr()
@@ -257,7 +256,7 @@ class Report(Singleton):
         return True
 
     @classmethod
-    def set_app_data(cls, parser, user_class, event_class, app="sop", os="ios", user_status_check=False):
+    def set_app_data(cls, parser, user_class,  app="sop", os="ios", user_status_check=False):
         if not user_class:
             print("Класс User не найден.")
         if not parser or not parser.parse_event:
@@ -267,7 +266,6 @@ class Report(Singleton):
         MySQLHandler.reset()
         MySQLHandler.app = app
         cls.Parser = parser
-        cls.Event_class = event_class
         cls.User = user_class
         cls.app = app
         cls.os = OS.get_os(os)
