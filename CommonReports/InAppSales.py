@@ -37,10 +37,10 @@ def new_report(shop=None,
 
     for os_str in os_list:
 
-        Report.set_app_data(parser=parser, event_class=Event, user_class=user_class, os=os_str, app=app,
+        Report.set_app_data(parser=parser, user_class=user_class, os=os_str, app=app,
                             user_status_check=False)
 
-        Report.set_events_data(additional_parameters=["country_iso_code"],
+        Report.set_events_data(additional_parameters=[],
                                period_start=period_start,
                                period_end=period_end,
                                min_version=min_version,
@@ -70,7 +70,7 @@ def new_report(shop=None,
         unique_inapps = set()
 
         while Report.get_next_event():
-
+            print(Report.current_user.user_id,str(Report.current_event.datetime),Report.current_event.obj_name)
             country = Report.current_user.country
             if country not in countries.keys():
                 countries[country] = {}
@@ -93,7 +93,7 @@ def new_report(shop=None,
             countries[country][in_app][month] += 1
 
         months_list = sorted(months_list)
-        filename=folder_dest + "/Sales " + os_str + ".xlsx"
+        filename=folder_dest + "/Sales " + os_str +" "+str(period_start)+" - "+str(period_end) + ".xlsx"
         writer = pd.ExcelWriter(filename)
         for country in countries.keys():
             df = pd.DataFrame(index=unique_inapps, columns=parameters + months_list)
