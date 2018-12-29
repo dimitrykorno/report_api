@@ -288,7 +288,7 @@ class QueryHandler():
                             line += " and "
 
             if positive and negative:
-                line += ' and '
+                line += ') and ('
             if negative:
                 for index, e in enumerate(negative):
                     if "%" in e:
