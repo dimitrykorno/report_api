@@ -231,7 +231,24 @@ test_devices_android = {
     "50d21e9d-da82-403f-92ff-4c4bad4e7161", "f357c7e2-33f2-46dc-bd94-a0a9d9b09501"
                                             "2383cd9a-3575-4d3b-9d40-cb92add470d8",
     "632bc0d9-f62d-40bb-96b2-4c0bb26949f0",
-    "50d21e9d-da82-403f-92ff-4c4bad4e7161", "4a21a9ef-ddeb-4b66-8c27-5c5729894e94"
+    "50d21e9d-da82-403f-92ff-4c4bad4e7161", "4a21a9ef-ddeb-4b66-8c27-5c5729894e94",
+    "1eb46a83-d09d-48c6-91b1-e47d07a22988","2e7fe94c-45ba-4aeb-a689-30aabba2aeeb",
+    "a71968b8-dd29-4cdd-9ab7-deb15e593733","93dc2ae45a1c102e","4a5e85e8-c4f2-413b-8e4e-a7d81c6e1587","41140aec-3167-4dcd-b14e-35964e336dc5",
+    "d740d68d-143b-4c48-9402-fcc633689700","2a475881-47ff-467f-8a83-502ccfd872eb","10c44347-6d0d-486b-bb87-c3079b3839bc",
+    "9a309402-6c7e-4b94-ac4f-9ad5dfb634e9","9417eb66-12e6-486d-8151-5b95cb8c00d0","60915540-15d3-4906-a7a6-b6f39d5a48fc",
+    "582f6a32-53a0-421f-8746-bcde54ab4bf8", "a3d18eff-482a-4a70-a971-b650bcd1c2a5","fe1a26b0-7c8b-4248-be5a-f748f142e5cf",
+    "90666808-ae57-4496-b12d-71971445a592","7163cae4-f6ca-4bc3-916c-8db5bd446601","4c4e2494-d31e-4822-a93f-04be44239bfb",
+    "51e024d5-6873-442c-844c-c23e38b91d43", "9bf9af78-de51-4dd7-8ac8-5a70ec83275f","e0ece327-4373-4286-aa31-31de06e8f44d",
+    "4ed70e4e-c8fe-414b-937e-16266c026ec9","9b083dad-84c9-4893-b708-10381153a6da","cc3369a5-a756-4c75-8a6d-9c672858ba04",
+    "969df6e8-ee94-4072-a124-e57e7f8f4bda","7308c894f36f673b","57f2fd12-0f73-48e7-82ab-0041369e19aa","885e9f70-101a-497c-87e2-039045924463",
+    "99414344-2d72-493d-b33a-3d4b9d08c0dc","eb40c9cc-416b-4bee-89ee-1d803e949782","00ba3396-a09e-4c17-8b25-f665cad90354",
+    "894b3ec8-434e-453c-ac38-bf76994a7056","eb40c9cc-416b-4bee-89ee-1d803e949782","35cd1975-4b53-44b1-ab3c-528b4a224f34",
+    "337d7b18-c2ba-41a5-90f0-1cb1b248dc61","891ee25d-6992-47d5-b654-860ea1367e53","891ee25d-6992-47d5-b654-860ea1367e53",
+    "1691a84e-7808-483b-a9fb-6d9cf2f96608","a9823900-df16-4605-8f99-2f32bda10945","b34bd1b2-2b3c-438f-9a79-53dc0d6b18bd",
+    "c2a3bcab-558f-4bde-8dac-884334f119e4","9e9a1512-f0cf-4d8a-b1e6-c9b57cbcc5f0","7453c30f-2ad5-4049-95b2-4fd955732952",
+    "5ea88b47-a86f-4d3b-91ba-57bdbd7a19b2","653f6fb6-559d-4998-9fb4-ae55498d8fc4","c4da7e3a-fda4-40aa-beed-cff5a792edf4",
+
+
 }
 test_devices_ios = {
     "68653B88-C937-479D-8548-C3020DDEB3C2", "FB5A77D5-5067-4E16-9830-65492BA81174",
@@ -242,9 +259,9 @@ test_devices_ios = {
     "00AB8828-4167-44C6-AEAC-A46558ECEBB1", "E9073059-D0A1-44F8-B206-72AE0D366381",
     "282AC74C-EE9E-418E-959D-423025E5A97D", "2AB947E4-B36A-44DA-9666-8456D11DF47B",
     "6AA563C5-65E0-416C-AC48-EBD79AB20D69", "2FA9246C-1CEB-4904-872D-F5B07371A571",
-    "AD64F7A4-30CF-4C89-A33C-65AABE3D1061",
-    "B4AB781D-654D-4AEB-AAE9-2F4ABF1BC92B",
-    "AD249847-3E4A-41FA-A764-2CF7BFAC1D8C",
+    "AD64F7A4-30CF-4C89-A33C-65AABE3D1061","1269C67F-4FBB-4A24-B87C-6CA522A85F22",
+    "B4AB781D-654D-4AEB-AAE9-2F4ABF1BC92B","4B4A18C1-7ED3-4E67-B548-A918C1371009",
+    "AD249847-3E4A-41FA-A764-2CF7BFAC1D8C","C2B4547C-8E72-4B25-9CDD-070047C3B5D4",
 }
 
 
@@ -386,6 +403,7 @@ def draw_plot(x_par, y_dict,
     result_files.append(os.path.abspath(filename))
     if show:
         plt.show()
+    plt.close()
     return result_files
 
 def draw_subplot(x_par, y_dict,
@@ -449,6 +467,7 @@ def draw_subplot(x_par, y_dict,
             plt.savefig(filename, bbox_extra_artists=(lgd,), bbox_inches='tight')
             if show:
                 plt.show()
+            plt.close()
             result_files.append(os.path.abspath(filename))
             plt.figure(figsize=(17, 8))
 
@@ -517,6 +536,7 @@ def draw_subplot(x_par, y_dict,
     result_files.append(os.path.abspath(filename))
     if show:
         plt.show()
+    plt.close()
     return result_files
 
 def log_approximation(x, y):
