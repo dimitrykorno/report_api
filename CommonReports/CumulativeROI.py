@@ -99,7 +99,7 @@ def new_report(parser=None,
     for os_str in os_list:
         os_obj = OS.get_os(os_str)
         # БАЗА ДАННЫХ
-        Report.set_app_data(parser=parser, event_class=Event, user_class=user_class, os=os_str, app=app,
+        Report.set_app_data(parser=parser, user_class=user_class, os=os_str, app=app,
                             user_status_check=False)
         Report.set_installs_data(additional_parameters=None,
                                  period_start=period_start,
@@ -199,8 +199,6 @@ def new_report(parser=None,
 
             # Переносим пользовательские данные в общие и обнуляем пользователськие парамтеры
             if Report.is_new_user():
-                if ltv > 400:
-                    print(ltv, Report.previous_user.user_id)
                 revenue += ltv
                 flush_user_data()
                 user_accumulative = dict.fromkeys(accumulating_parameters, 0)
@@ -237,7 +235,6 @@ def new_report(parser=None,
             previous_day_in_game = day_in_game
 
         flush_user_data()
-        print(revenue)
         #######################################################################################################################
 
         # РАСЧЕТЫ И ВЫВОД
@@ -248,7 +245,7 @@ def new_report(parser=None,
             overall_publisher_installs = 0
 
             # Запись в отдельную таблицу
-            filename=folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI.xlsx"
+            filename=folder_dest + OS.get_os_string(os_obj) + " " + publisher + " Cummulative ROI" +" "+str(period_start)+" - "+str(period_end)+ " "+str(countries_list)+".xlsx"
             writer = pd.ExcelWriter(filename)
             # По каждоый трекинговой ссылке
             for source in sources[publisher]:
@@ -495,13 +492,15 @@ def new_report(parser=None,
             plt.plot(range(len(y_real_arpu)), y_real_arpu, '*', color="green", label="known")
             plt.plot(np.arange(0, days_since_install, 1), y, '--', color="red", label="approximate")
             plt.legend()
-            title = OS.get_os_string(os_obj) + " ARPU all sources " + publisher
+            title = OS.get_os_string(os_obj) + " ARPU all sources " + publisher +" "+str(period_start)+" - "+str(period_end) + " "+str(countries_list)
             plt.title(title)
-            filename=folder_dest + title + ".png"
+            check_folder(folder_dest+publisher+"/")
+            filename=folder_dest +publisher+"/"+ title + ".png"
             plt.savefig(filename, bbox_inches='tight')
             plt.close()
             result_files.append(os.path.abspath(filename))
-        print("Not found CPI sources", not_sound_cpi)
+        if not_sound_cpi:
+            errors+="Need to add CPI sources "+os_str+" " + str(not_sound_cpi)
 
         df_transactions = pd.DataFrame(index=[],
                                        columns=["user id", "publisher", "source", "install date", "purchase date",
@@ -511,7 +510,7 @@ def new_report(parser=None,
                 **transaction
             }, ignore_index=True)
 
-        filename=folder_dest + OS.get_os_string(os_obj) + " Transactions.xlsx"
+        filename=folder_dest + OS.get_os_string(os_obj) + " Transactions"+" "+str(period_start)+" - "+str(period_end)+".xlsx"
         writer = pd.ExcelWriter(filename)
         df_transactions.to_excel(writer, index=False)
         try_save_writer(writer,filename)
